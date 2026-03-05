@@ -3,7 +3,9 @@
 REST API for foods, meals, and nutrition analytics.
 
 ## Run locally
-(coming soon)
+```bash 
+source venv/bin/activate
+uvicorn app.main:app --reload
 
 ## Docs
 Swagger UI: /docs

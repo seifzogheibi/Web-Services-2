@@ -1,6 +1,6 @@
 # PLAN.md — Nutrition API (FastAPI)
 
-- [ ] Project scaffold runs + Swagger UI accessible
+- [X] Project scaffold runs + Swagger UI accessible
 - [ ] SQL database connected
 - [ ] Food model + migrations
 - [ ] Foods CRUD endpoints
