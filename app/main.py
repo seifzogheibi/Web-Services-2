@@ -6,6 +6,6 @@ app = FastAPI(
     description="REST API for foods, meals, and nutrition analytics.",
 )
 
-@app.get("/health")
-def health():
+@app.get("/test")
+def test():
     return {"status": "okay"}
