@@ -1,0 +1,1 @@
+from app.models.food import Food  # noqa: F401
