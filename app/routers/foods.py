@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
 
 from app.db.session import SessionLocal
@@ -17,11 +17,35 @@ def get_db():
 
 
 @router.get("/", response_model=list[FoodOut])
-def list_foods(db: Session = Depends(get_db)):
-    return db.query(Food).all()
+def list_foods(
+    db: Session = Depends(get_db),
+    name: str | None = Query(default=None, description="Search foods by name"),
+    brand: str | None = Query(default=None, description="Filter by brand"),
+    source: str | None = Query(default=None, description="Filter by data source"),
+    min_protein: float | None = Query(default=None, description="Minimum protein per 100g"),
+    max_calories: float | None = Query(default=None, description="Maximum calories per 100g")
+):
+    query = db.query(Food)
+
+    if name:
+        query = query.filter(Food.name.ilike(f"%{name}%"))
+
+    if brand:
+        query = query.filter(Food.brand.ilike(f"%{brand}%"))
+
+    if source:
+        query = query.filter(Food.source == source)
+
+    if min_protein is not None:
+        query = query.filter(Food.protein_per_100g >= min_protein)
+
+    if max_calories is not None:
+        query = query.filter(Food.calories_per_100g <= max_calories)
+
+    return query.all()
 
 
-@router.post("/", response_model=FoodOut)
+@router.post("/", response_model=FoodOut, status_code=status.HTTP_201_CREATED)
 def create_food(food: FoodCreate, db: Session = Depends(get_db)):
     db_food = Food(**food.model_dump())
     db.add(db_food)

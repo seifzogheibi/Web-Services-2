@@ -6,6 +6,7 @@ REST API for foods, meals, and nutrition analytics.
 ```bash 
 source venv/bin/activate
 uvicorn app.main:app --reload
+```
 
 ## Docs
 Swagger UI: /docs
