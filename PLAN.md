@@ -10,6 +10,7 @@
 - [X] Meals CRUD endpoints
 - [X] Add food to meal endpoint
 - [X] Meal nutrition endpoint (meal nutrition values)
+- [X] Daily analytics of consumed calories and macros
 - [ ] Daily analytics endpoint
 - [ ] External dataset search + import
 - [ ] Tests
