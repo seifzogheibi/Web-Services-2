@@ -1,10 +1,10 @@
 from datetime import datetime
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class MealItemCreate(BaseModel):
     food_id: int
-    grams: float
+    grams: float = Field(..., gt=0) # ensure grams is greater than 0
 
 
 class MealItemOut(BaseModel):
