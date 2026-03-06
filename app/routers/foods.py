@@ -19,7 +19,7 @@ def get_db():
 @router.get("/", response_model=list[FoodOut])
 def list_foods(
     db: Session = Depends(get_db),
-    name: str | None = Query(default=None, description="Search foods by name"),
+    search: str | None = Query(default=None, description="Search foods by name"),
     brand: str | None = Query(default=None, description="Filter by brand"),
     source: str | None = Query(default=None, description="Filter by data source"),
     min_protein: float | None = Query(default=None, description="Minimum protein per 100g"),
@@ -27,8 +27,8 @@ def list_foods(
 ):
     query = db.query(Food)
 
-    if name:
-        query = query.filter(Food.name.ilike(f"%{name}%"))
+    if search:
+        query = query.filter(Food.name.ilike(f"%{search}%"))
 
     if brand:
         query = query.filter(Food.brand.ilike(f"%{brand}%"))
@@ -56,7 +56,7 @@ def create_food(food: FoodCreate, db: Session = Depends(get_db)):
 
 @router.get("/{food_id}", response_model=FoodOut)
 def get_food(food_id: int, db: Session = Depends(get_db)):
-    food = db.query(Food).get(food_id)
+    food = db.get(Food, food_id)
 
     if not food:
         raise HTTPException(status_code=404, detail="Food not found")
@@ -66,7 +66,7 @@ def get_food(food_id: int, db: Session = Depends(get_db)):
 
 @router.patch("/{food_id}", response_model=FoodOut)
 def update_food(food_id: int, update: FoodUpdate, db: Session = Depends(get_db)):
-    food = db.query(Food).get(food_id)
+    food = db.get(Food, food_id)
 
     if not food:
         raise HTTPException(status_code=404, detail="Food not found")
@@ -82,7 +82,7 @@ def update_food(food_id: int, update: FoodUpdate, db: Session = Depends(get_db))
 
 @router.delete("/{food_id}")
 def delete_food(food_id: int, db: Session = Depends(get_db)):
-    food = db.query(Food).get(food_id)
+    food = db.get(Food, food_id)
 
     if not food:
         raise HTTPException(status_code=404, detail="Food not found")

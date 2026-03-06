@@ -1,1 +1,3 @@
-from app.models.food import Food  # noqa: F401
+from app.models.food import Food
+from app.models.meal import Meal
+from app.models.meal_item import MealItem
