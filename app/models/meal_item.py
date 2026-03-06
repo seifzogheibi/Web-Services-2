@@ -18,4 +18,4 @@ class MealItem(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
     meal = relationship("Meal", back_populates="items")
-    food = relationship("Food")
+    food = relationship("Food", back_populates="meal_items")

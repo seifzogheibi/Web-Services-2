@@ -8,7 +8,8 @@
 - [X] Meal and MealItem models + migrations
 - [X] Meal and MealItem schemas
 - [X] Meals CRUD endpoints
-- [ ] Add food to meal endpoint
+- [X] Add food to meal endpoint
+- [X] Meal nutrition endpoint (meal nutrition values)
 - [ ] Daily analytics endpoint
 - [ ] External dataset search + import
 - [ ] Tests

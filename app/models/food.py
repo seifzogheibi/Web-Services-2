@@ -1,5 +1,5 @@
 from sqlalchemy import String, Float, DateTime, func
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
 
@@ -19,3 +19,5 @@ class Food(Base):
     source: Mapped[str] = mapped_column(String(50), nullable=False, default="manual")
 
     created_at: Mapped[DateTime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+    meal_items = relationship("MealItem", back_populates="food")

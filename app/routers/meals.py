@@ -7,6 +7,7 @@ from app.models.meal_item import MealItem
 from app.models.food import Food
 from app.schemas.meal import MealCreate, MealUpdate, MealOut
 from app.schemas.meal_item import MealItemCreate, MealItemOut
+from app.schemas.nutrition import MealNutritionOut
 
 router = APIRouter(prefix="/meals", tags=["meals"])
 
@@ -77,6 +78,35 @@ def get_meal(meal_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Meal not found")
 
     return meal
+
+@router.get("/{meal_id}/nutrition", response_model=MealNutritionOut)
+def get_meal_nutrition(meal_id: int, db: Session = Depends(get_db)):
+    meal = db.get(Meal, meal_id)
+
+    if not meal:
+        raise HTTPException(status_code=404, detail="Meal not found")
+
+    total_calories = 0.0
+    total_protein = 0.0
+    total_carbs = 0.0
+    total_fat = 0.0
+
+    for item in meal.items:
+        food = item.food
+        factor = item.grams / 100.0
+
+        total_calories += food.calories_per_100g * factor
+        total_protein += food.protein_per_100g * factor
+        total_carbs += food.carbs_per_100g * factor
+        total_fat += food.fat_per_100g * factor
+
+    return MealNutritionOut(
+        meal_id=meal.id,
+        total_calories=round(total_calories, 2),
+        total_protein=round(total_protein, 2),
+        total_carbs=round(total_carbs, 2),
+        total_fat=round(total_fat, 2),
+    )
 
 
 @router.delete("/{meal_id}")
