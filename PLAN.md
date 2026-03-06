@@ -7,7 +7,7 @@
 - [X] Foods filtering/search (name, brand, source, min_protein)
 - [X] Meal and MealItem models + migrations
 - [X] Meal and MealItem schemas
-- [ ] Meals CRUD endpoints
+- [X] Meals CRUD endpoints
 - [ ] Add food to meal endpoint
 - [ ] Daily analytics endpoint
 - [ ] External dataset search + import
