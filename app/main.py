@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from app.routers import foods, meals, analytics
+from app.routers import foods, meals, analytics, external
 
 app = FastAPI(
     title="Nutrition API",
@@ -14,3 +14,4 @@ def test():
 app.include_router(foods.router)
 app.include_router(meals.router)
 app.include_router(analytics.router)
+app.include_router(external.router)
