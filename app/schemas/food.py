@@ -10,6 +10,7 @@ class FoodBase(BaseModel):
     carbs_per_100g: float
     fat_per_100g: float
     source: str = "manual"
+    external_id: str | None = None
 
 
 class FoodCreate(FoodBase):

@@ -15,9 +15,7 @@ class Food(Base):
     protein_per_100g: Mapped[float] = mapped_column(Float, nullable=False)
     carbs_per_100g: Mapped[float] = mapped_column(Float, nullable=False)
     fat_per_100g: Mapped[float] = mapped_column(Float, nullable=False)
-
     source: Mapped[str] = mapped_column(String(50), nullable=False, default="manual")
-
+    external_id: Mapped[str | None] = mapped_column(String(100), nullable=True)
     created_at: Mapped[DateTime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
-
     meal_items = relationship("MealItem", back_populates="food")

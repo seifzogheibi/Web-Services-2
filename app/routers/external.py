@@ -59,6 +59,10 @@ def import_openfoodfacts_product(payload: ExternalFoodImportRequest, db: Session
 
     if not barcode:
         raise HTTPException(status_code=400, detail="Barcode is required")
+    
+    existing_food = db.query(Food).filter(Food.external_id == barcode).first()
+    if existing_food:
+        return existing_food
 
     url = f"https://world.openfoodfacts.org/api/v2/product/{barcode}.json"
 
@@ -80,6 +84,7 @@ def import_openfoodfacts_product(payload: ExternalFoodImportRequest, db: Session
         carbs_per_100g=float(nutriments.get("carbohydrates_100g") or 0),
         fat_per_100g=float(nutriments.get("fat_100g") or 0),
         source="openfoodfacts",
+        external_id=barcode,
     )
 
     db.add(food)
