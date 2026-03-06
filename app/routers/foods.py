@@ -23,7 +23,9 @@ def list_foods(
     brand: str | None = Query(default=None, description="Filter by brand"),
     source: str | None = Query(default=None, description="Filter by data source"),
     min_protein: float | None = Query(default=None, description="Minimum protein per 100g"),
-    max_calories: float | None = Query(default=None, description="Maximum calories per 100g")
+    max_calories: float | None = Query(default=None, description="Maximum calories per 100g"),
+    limit: int = Query(default=20, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
 ):
     query = db.query(Food)
 
@@ -42,7 +44,7 @@ def list_foods(
     if max_calories is not None:
         query = query.filter(Food.calories_per_100g <= max_calories)
 
-    return query.all()
+    return query.offset(offset).limit(limit).all()
 
 
 @router.post("/", response_model=FoodOut, status_code=status.HTTP_201_CREATED)
