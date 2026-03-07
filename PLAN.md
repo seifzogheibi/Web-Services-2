@@ -12,6 +12,8 @@
 - [X] Meal nutrition endpoint (meal nutrition values)
 - [X] Daily analytics of consumed calories and macros
 - [X] External dataset search
+- [X] External dataset import
+- [X] Frontend demo connected to backend API
 - [ ] Tests
 - [ ] Deployment
 - [ ] Final docs PDF + report + slides
