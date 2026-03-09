@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
+from datetime import date as date_type, datetime, time
 
 from app.db.session import SessionLocal
 from app.models.meal import Meal
@@ -69,6 +70,21 @@ def add_food_to_meal(meal_id: int, item: MealItemCreate, db: Session = Depends(g
 def list_meals(db: Session = Depends(get_db)):
     return db.query(Meal).all()
 
+@router.get("/by-date", response_model=list[MealOut])
+def get_meals_by_date(date: date_type, db: Session = Depends(get_db)):
+    start_of_day = datetime.combine(date, time.min)
+    end_of_day = datetime.combine(date, time.max)
+
+    meals = (
+        db.query(Meal)
+        .options(selectinload(Meal.items).selectinload(MealItem.food))
+        .filter(Meal.eaten_at >= start_of_day, Meal.eaten_at <= end_of_day)
+        .order_by(Meal.eaten_at.asc())
+        .all()
+    )
+
+    return meals
+
 
 @router.get("/{meal_id}", response_model=MealOut)
 def get_meal(meal_id: int, db: Session = Depends(get_db)):
@@ -120,3 +136,34 @@ def delete_meal(meal_id: int, db: Session = Depends(get_db)):
     db.commit()
 
     return {"message": "Meal deleted"}
+
+@router.patch("/items/{item_id}", response_model=MealItemOut)
+def update_meal_item(item_id: int, update: MealItemCreate, db: Session = Depends(get_db)):
+    item = db.get(MealItem, item_id)
+
+    if not item:
+        raise HTTPException(status_code=404, detail="Meal item not found")
+
+    food = db.get(Food, update.food_id)
+    if not food:
+        raise HTTPException(status_code=404, detail="Food not found")
+
+    item.food_id = update.food_id
+    item.grams = update.grams
+
+    db.commit()
+    db.refresh(item)
+    return item
+
+
+@router.delete("/items/{item_id}")
+def delete_meal_item(item_id: int, db: Session = Depends(get_db)):
+    item = db.get(MealItem, item_id)
+
+    if not item:
+        raise HTTPException(status_code=404, detail="Meal item not found")
+
+    db.delete(item)
+    db.commit()
+
+    return {"message": "Meal item deleted"}

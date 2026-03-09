@@ -1,15 +1,20 @@
 from datetime import datetime
+from typing import Literal
 from pydantic import BaseModel
+
 from app.schemas.meal_item import MealItemOut
 
 
+MealName = Literal["Breakfast", "Lunch", "Dinner", "Snack"]
+
+
 class MealCreate(BaseModel):
-    name: str
+    name: MealName
     eaten_at: datetime
 
 
 class MealUpdate(BaseModel):
-    name: str | None = None
+    name: MealName | None = None
     eaten_at: datetime | None = None
 
 

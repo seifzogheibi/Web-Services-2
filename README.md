@@ -2,6 +2,8 @@
 
 REST API for foods, meals, and nutrition analytics.
 
+The system separates reusable food definitions from daily consumption events. Foods act as a nutritional reference catalogue, meals represent eating occasions, and meal items record which foods were consumed in each meal and in what quantity.
+
 ## Run locally
 ```bash 
 source venv/bin/activate

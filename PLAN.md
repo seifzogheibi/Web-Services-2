@@ -14,6 +14,7 @@
 - [X] External dataset search
 - [X] External dataset import
 - [X] Frontend demo connected to backend API
+- [X] Complete frontend UI
 - [ ] Tests
 - [ ] Deployment
 - [ ] Final docs PDF + report + slides
