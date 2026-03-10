@@ -28,7 +28,7 @@ http://127.0.0.1:8000/docs
 
 --------------------------------------------------
 
-BASE URL
+## BASE URL
 
 http://127.0.0.1:8000
 
@@ -37,7 +37,7 @@ All endpoints described below are relative to this base URL.
 
 --------------------------------------------------
 
-AUTHENTICATION
+## AUTHENTICATION
 
 Authentication is not implemented for this coursework prototype.
 
@@ -46,7 +46,7 @@ All endpoints are publicly accessible.
 
 --------------------------------------------------
 
-HEALTH ENDPOINT
+## HEALTH ENDPOINT
 
 GET /health
 
@@ -59,7 +59,7 @@ GET /health
 Example Response:
 
 {
-  "status": "ok"
+  "status": "okay"
 }
 
 Status Codes:
@@ -68,7 +68,7 @@ Status Codes:
 
 --------------------------------------------------
 
-FOODS
+## FOODS
 
 Foods represent individual food items stored in the local food library.
 
@@ -87,7 +87,7 @@ Fields:
 
 --------------------------------------------------
 
-GET /foods/
+### GET /foods/
 
 Description:
 Returns all foods stored in the database.
@@ -126,7 +126,7 @@ Status Codes:
 
 --------------------------------------------------
 
-POST /foods/
+### POST /foods/
 
 Description:
 Creates a new food entry in the database.
@@ -153,7 +153,7 @@ Status Codes:
 
 --------------------------------------------------
 
-GET /foods/{food_id}
+### GET /foods/{food_id}
 
 Description:
 Returns a specific food.
@@ -182,7 +182,7 @@ Status Codes:
 
 --------------------------------------------------
 
-PATCH /foods/{food_id}
+### PATCH /foods/{food_id}
 
 Description:
 Updates an existing food.
@@ -202,7 +202,7 @@ Returns the updated food object.
 
 --------------------------------------------------
 
-DELETE /foods/{food_id}
+### DELETE /foods/{food_id}
 
 Description:
 Deletes a food from the database.
@@ -223,7 +223,7 @@ Status Codes:
 
 --------------------------------------------------
 
-MEALS
+## MEALS
 
 Meals represent eating events in the food diary.
 
@@ -238,7 +238,7 @@ Meals contain one or more meal items representing foods consumed.
 
 --------------------------------------------------
 
-GET /meals/
+### GET /meals/
 
 Description:
 Returns all meals stored in the system.
@@ -249,7 +249,7 @@ GET /meals/
 
 --------------------------------------------------
 
-POST /meals/
+### POST /meals/
 
 Description:
 Creates a new meal.
@@ -267,7 +267,7 @@ Returns the created meal object.
 
 --------------------------------------------------
 
-GET /meals/{meal_id}
+### GET /meals/{meal_id}
 
 Description:
 Returns a specific meal including all food items.
@@ -278,7 +278,7 @@ GET /meals/4
 
 --------------------------------------------------
 
-PATCH /meals/{meal_id}
+### PATCH /meals/{meal_id}
 
 Description:
 Updates a meal.
@@ -286,7 +286,7 @@ Updates a meal.
 
 --------------------------------------------------
 
-DELETE /meals/{meal_id}
+### DELETE /meals/{meal_id}
 
 Description:
 Deletes a meal and all associated meal items.
@@ -294,7 +294,7 @@ Deletes a meal and all associated meal items.
 
 --------------------------------------------------
 
-MEAL ITEMS
+## MEAL ITEMS
 
 Meal items represent foods consumed in a meal.
 
@@ -305,7 +305,7 @@ Each item contains:
 
 --------------------------------------------------
 
-POST /meals/{meal_id}/items
+### POST /meals/{meal_id}/items
 
 Description:
 Adds a food to a meal.
@@ -326,9 +326,9 @@ Returns the created meal item.
 
 --------------------------------------------------
 
-MEALS BY DATE
+## MEALS BY DATE
 
-GET /meals/by-date
+### GET /meals/by-date
 
 Description:
 Returns all meals for a specific date.
@@ -355,14 +355,14 @@ Example Response:
 
 --------------------------------------------------
 
-ANALYTICS
+## ANALYTICS
 
 Analytics endpoints compute nutritional summaries.
 
 
 --------------------------------------------------
 
-GET /analytics/daily
+### GET /analytics/daily
 
 Description:
 Returns the total nutritional intake for a given date.
@@ -382,7 +382,7 @@ Example Response:
 
 --------------------------------------------------
 
-GET /meals/{meal_id}/nutrition
+### GET /meals/{meal_id}/nutrition
 
 Description:
 Returns the nutritional breakdown of a specific meal.
@@ -390,7 +390,7 @@ Returns the nutritional breakdown of a specific meal.
 
 --------------------------------------------------
 
-EXTERNAL DATA INTEGRATION
+## EXTERNAL DATA INTEGRATION
 
 The API integrates with the OpenFoodFacts dataset.
 
@@ -399,7 +399,7 @@ This allows users to search external food products and import them into the loca
 
 --------------------------------------------------
 
-GET /external/openfoodfacts/search
+### GET /external/openfoodfacts/search
 
 Description:
 Searches for foods in the OpenFoodFacts API.
@@ -421,7 +421,7 @@ Example Response:
 
 --------------------------------------------------
 
-POST /external/openfoodfacts/import
+### POST /external/openfoodfacts/import
 
 Description:
 Imports a product from OpenFoodFacts into the local food database.
@@ -438,7 +438,7 @@ Returns the created food object stored in the local database.
 
 --------------------------------------------------
 
-ERROR HANDLING
+## ERROR HANDLING
 
 The API uses standard HTTP response codes.
 
@@ -451,7 +451,7 @@ The API uses standard HTTP response codes.
 
 --------------------------------------------------
 
-SWAGGER DOCUMENTATION
+## SWAGGER DOCUMENTATION
 
 Interactive API documentation is automatically generated by FastAPI and is available at:
 
