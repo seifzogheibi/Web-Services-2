@@ -8,8 +8,8 @@ app = FastAPI(
     description="REST API for foods, meals, and nutrition analytics.",
 )
 
-@app.get("/test")
-def test():
+@app.get("/health")
+def health_check():
     return {"status": "okay"}
 
 app.include_router(foods.router)

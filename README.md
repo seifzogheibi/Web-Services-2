@@ -19,3 +19,5 @@ Notes:
 **An initial Django prototype was explored but replaced with FastAPI to improve API-first design, asynchronous request handling, and automatic OpenAPI documentation generation.
 
 **During development, SQLite was used for simplicity and portability. Because SQLite has limitations around altering constraints in existing tables, duplicate prevention for imported foods was handled at the application layer by checking external_id before insertion.
+
+**The frontend communicates with the REST API asynchronously using background HTTP requests. These requests are visible in browser developer tools or Swagger, rather than being exposed directly in the user interface.
