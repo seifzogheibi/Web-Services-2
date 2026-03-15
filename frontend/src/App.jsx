@@ -1,9 +1,17 @@
 import { useEffect, useMemo, useState } from "react";
+import "bootstrap/dist/css/bootstrap.min.css";
 
 const API = "http://127.0.0.1:8000";
 const MEAL_SECTIONS = ["Breakfast", "Lunch", "Dinner", "Snack"];
 
 function App() {
+  const [token, setToken] = useState(localStorage.getItem("token") || "");
+  const [me, setMe] = useState(null);
+
+  const [authMode, setAuthMode] = useState("login");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
   const [foods, setFoods] = useState([]);
   const [query, setQuery] = useState("");
   const [externalFoods, setExternalFoods] = useState([]);
@@ -13,6 +21,7 @@ function App() {
   const [dailySummary, setDailySummary] = useState(null);
   const [statusMessage, setStatusMessage] = useState("");
   const [mealsForDate, setMealsForDate] = useState([]);
+  const [externalLoading, setExternalLoading] = useState(false);
 
   const [foodForm, setFoodForm] = useState({
     name: "",
@@ -41,9 +50,142 @@ function App() {
     fat_per_100g: "",
   });
 
+  function getAuthHeaders(json = true) {
+    const headers = {};
+    if (token) {
+      headers.Authorization = `Bearer ${token}`;
+    }
+    if (json) {
+      headers["Content-Type"] = "application/json";
+    }
+    return headers;
+  }
+
+  function formatDisplayDate(dateString) {
+    const [year, month, day] = dateString.split("-");
+    return `${day}-${month}-${year}`;
+  }
+
+  function normalizeMealName(name) {
+    const value = name.trim().toLowerCase();
+
+    if (value === "breakfast") return "Breakfast";
+    if (value === "lunch") return "Lunch";
+    if (value === "dinner") return "Dinner";
+    if (value === "snack" || value === "snacks") return "Snack";
+
+    return null;
+  }
+
+  function getSectionItems(sectionName) {
+    return mealsForDate
+      .filter((meal) => normalizeMealName(meal.name) === sectionName)
+      .flatMap((meal) => meal.items || []);
+  }
+
+  async function fetchMe(authToken = token) {
+    if (!authToken) return;
+
+    try {
+      const res = await fetch(`${API}/auth/me`, {
+        headers: {
+          Authorization: `Bearer ${authToken}`,
+        },
+      });
+
+      if (!res.ok) {
+        localStorage.removeItem("token");
+        setToken("");
+        setMe(null);
+        return;
+      }
+
+      const data = await res.json();
+      setMe(data);
+    } catch (error) {
+      localStorage.removeItem("token");
+      setToken("");
+      setMe(null);
+    }
+  }
+
+  async function handleRegister(e) {
+    e.preventDefault();
+    setStatusMessage("");
+
+    try {
+      const res = await fetch(`${API}/auth/register`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setStatusMessage(data.detail || "Registration failed.");
+        return;
+      }
+
+      setStatusMessage("Registration successful. Please sign in.");
+      setAuthMode("login");
+      setPassword("");
+    } catch (error) {
+      setStatusMessage("Could not register.");
+    }
+  }
+
+  async function handleLogin(e) {
+    e.preventDefault();
+    setStatusMessage("");
+
+    try {
+      const formData = new URLSearchParams();
+      formData.append("username", email);
+      formData.append("password", password);
+      formData.append("grant_type", "password");
+
+      const res = await fetch(`${API}/auth/login`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: formData.toString(),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setStatusMessage(data.detail || "Login failed.");
+        return;
+      }
+
+      localStorage.setItem("token", data.access_token);
+      setToken(data.access_token);
+      setStatusMessage("Signed in successfully.");
+      setPassword("");
+    } catch (error) {
+      setStatusMessage("Could not sign in.");
+    }
+  }
+
+  function handleLogout() {
+    localStorage.removeItem("token");
+    setToken("");
+    setMe(null);
+    setFoods([]);
+    setExternalFoods([]);
+    setMealsForDate([]);
+    setDailySummary(null);
+    setStatusMessage("Signed out.");
+    setEditingFoodId(null);
+  }
+
   async function fetchFoods() {
     try {
-      const res = await fetch(`${API}/foods/`);
+      const res = await fetch(`${API}/foods/`, {
+        headers: getAuthHeaders(false),
+      });
       if (!res.ok) throw new Error("Failed to load foods");
       const data = await res.json();
       setFoods(data);
@@ -54,41 +196,65 @@ function App() {
   }
 
   async function searchExternal() {
+    if (!query.trim()) {
+      setStatusMessage("Enter a search term first.");
+      return;
+    }
+  
+    setExternalLoading(true);
+    setStatusMessage("");
+  
     try {
       const res = await fetch(
-        `${API}/external/openfoodfacts/search?query=${encodeURIComponent(query)}`
+        `${API}/external/openfoodfacts/search?query=${encodeURIComponent(query)}`,
+        {
+          headers: getAuthHeaders(false),
+        }
       );
-      if (!res.ok) throw new Error("Search failed");
-      const data = await res.json();
+  
+      const data = await res.json().catch(() => null);
+  
+      if (!res.ok) {
+        setExternalFoods([]);
+        throw new Error(data?.detail || "Search failed");
+      }
+  
       setExternalFoods(data);
-      setStatusMessage("External foods loaded.");
+      setStatusMessage(`Loaded ${data.length} external foods.`);
     } catch (error) {
-      setStatusMessage("Could not search external foods.");
+      setExternalFoods([]);
+      setStatusMessage(`Could not search external foods: ${error.message}`);
+    } finally {
+      setExternalLoading(false);
     }
   }
 
-  async function importExternalFood(barcode) {
+  async function importExternalFood(externalId) {
     try {
       const res = await fetch(`${API}/external/openfoodfacts/import`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ barcode }),
+        headers: getAuthHeaders(),
+        body: JSON.stringify({
+          barcode: externalId,
+        }),
       });
 
-      if (!res.ok) throw new Error("Import failed");
+      if (!res.ok) {
+        throw new Error("Import failed");
+      }
 
       await fetchFoods();
-      setStatusMessage("Food imported into your Food Library.");
+      setStatusMessage("Food imported successfully.");
     } catch (error) {
-      setStatusMessage("Could not import external food.");
+      setStatusMessage("Could not import food.");
     }
   }
 
   async function fetchMealsForDate(date = selectedDate) {
     try {
-      const res = await fetch(`${API}/meals/by-date?date=${date}`);
+      const res = await fetch(`${API}/meals/by-date?date=${date}`, {
+        headers: getAuthHeaders(false),
+      });
       if (!res.ok) throw new Error("Failed to load diary");
       const data = await res.json();
       setMealsForDate(data);
@@ -100,7 +266,9 @@ function App() {
 
   async function fetchDailySummary(date = selectedDate) {
     try {
-      const res = await fetch(`${API}/analytics/daily?date=${date}`);
+      const res = await fetch(`${API}/analytics/daily?date=${date}`, {
+        headers: getAuthHeaders(false),
+      });
       if (!res.ok) throw new Error("Summary failed");
       const data = await res.json();
       setDailySummary(data);
@@ -115,9 +283,7 @@ function App() {
     try {
       const res = await fetch(`${API}/foods/`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: getAuthHeaders(),
         body: JSON.stringify({
           ...foodForm,
           calories_per_100g: Number(foodForm.calories_per_100g),
@@ -174,9 +340,7 @@ function App() {
       if (!existingMeal) {
         const mealRes = await fetch(`${API}/meals/`, {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers: getAuthHeaders(),
           body: JSON.stringify({
             name: sectionName,
             eaten_at: `${selectedDate}T12:00:00`,
@@ -189,9 +353,7 @@ function App() {
 
       const itemRes = await fetch(`${API}/meals/${existingMeal.id}/items`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: getAuthHeaders(),
         body: JSON.stringify({
           food_id: Number(sectionForm.food_id),
           grams: Number(sectionForm.grams),
@@ -217,10 +379,11 @@ function App() {
     try {
       const res = await fetch(`${API}/meals/items/${itemId}`, {
         method: "DELETE",
+        headers: getAuthHeaders(false),
       });
-  
+
       if (!res.ok) throw new Error("Delete failed");
-  
+
       await fetchMealsForDate(selectedDate);
       await fetchDailySummary(selectedDate);
       setStatusMessage("Logged food deleted successfully.");
@@ -231,23 +394,21 @@ function App() {
 
   async function handleEditMealItem(item) {
     const newGrams = window.prompt("Enter new grams:", item.grams);
-  
+
     if (!newGrams) return;
-  
+
     try {
       const res = await fetch(`${API}/meals/items/${item.id}`, {
         method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: getAuthHeaders(),
         body: JSON.stringify({
           food_id: item.food_id,
           grams: Number(newGrams),
         }),
       });
-  
+
       if (!res.ok) throw new Error("Edit failed");
-  
+
       await fetchMealsForDate(selectedDate);
       await fetchDailySummary(selectedDate);
       setStatusMessage("Logged food updated successfully.");
@@ -259,12 +420,13 @@ function App() {
   async function handleDeleteFood(foodId) {
     const confirmed = window.confirm("Delete this food from the Food Library?");
     if (!confirmed) return;
-  
+
     try {
       const res = await fetch(`${API}/foods/${foodId}`, {
         method: "DELETE",
+        headers: getAuthHeaders(false),
       });
-  
+
       if (!res.ok) {
         const errorData = await res.json().catch(() => null);
         throw new Error(
@@ -273,36 +435,11 @@ function App() {
             : "Delete failed"
         );
       }
-  
+
       await fetchFoods();
       setStatusMessage("Food deleted successfully.");
     } catch (error) {
       setStatusMessage(`Could not delete food: ${error.message}`);
-    }
-  }
-
-  async function importExternalFood(externalId) {
-    try {
-      const res = await fetch(`${API}/external/openfoodfacts/import`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          barcode: externalId,
-        }),
-      });
-  
-      if (!res.ok) {
-        throw new Error("Import failed");
-      }
-  
-      setStatusMessage("Food imported successfully.");
-  
-      // refresh food library so the new food appears
-      fetchFoods();
-    } catch (error) {
-      setStatusMessage("Could not import food.");
     }
   }
 
@@ -317,7 +454,7 @@ function App() {
       fat_per_100g: food.fat_per_100g ?? "",
     });
   }
-  
+
   function cancelEditingFood() {
     setEditingFoodId(null);
     setEditFoodForm({
@@ -329,14 +466,12 @@ function App() {
       fat_per_100g: "",
     });
   }
-  
+
   async function saveEditedFood(foodId) {
     try {
       const res = await fetch(`${API}/foods/${foodId}`, {
         method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: getAuthHeaders(),
         body: JSON.stringify({
           name: editFoodForm.name,
           brand: editFoodForm.brand,
@@ -346,7 +481,7 @@ function App() {
           fat_per_100g: Number(editFoodForm.fat_per_100g),
         }),
       });
-  
+
       if (!res.ok) {
         const errorData = await res.json().catch(() => null);
         throw new Error(
@@ -355,7 +490,7 @@ function App() {
             : "Update failed"
         );
       }
-  
+
       await fetchFoods();
       cancelEditingFood();
       setStatusMessage("Food updated successfully.");
@@ -364,28 +499,18 @@ function App() {
     }
   }
 
-  function normalizeMealName(name) {
-    const value = name.trim().toLowerCase();
-  
-    if (value === "breakfast") return "Breakfast";
-    if (value === "lunch") return "Lunch";
-    if (value === "dinner") return "Dinner";
-    if (value === "snack" || value === "snacks") return "Snack";
-  
-    return null;
-  }
-  
-  function getSectionItems(sectionName) {
-    return mealsForDate
-      .filter((meal) => normalizeMealName(meal.name) === sectionName)
-      .flatMap((meal) => meal.items || []);
-  }
+  useEffect(() => {
+    if (token) {
+      fetchMe(token);
+    }
+  }, [token]);
 
   useEffect(() => {
+    if (!token) return;
     fetchFoods();
     fetchMealsForDate(selectedDate);
     fetchDailySummary(selectedDate);
-  }, []);
+  }, [token]);
 
   const groupedSections = useMemo(() => {
     const result = {};
@@ -395,330 +520,535 @@ function App() {
     return result;
   }, [mealsForDate]);
 
-  return (
-    <div
-      style={{
-        padding: "40px",
-        fontFamily: "Arial",
-        maxWidth: "1100px",
-        margin: "0 auto",
-      }}
-    >
-      <h1>Food Diary for: {selectedDate}</h1>
-      <p>{statusMessage}</p>
+  if (!token) {
+    return (
+      <div className="min-vh-100 d-flex align-items-center bg-light">
+        <div className="container">
+          <div className="row justify-content-center">
+            <div className="col-12 col-md-8 col-lg-5">
+              <div className="card shadow-sm border-0">
+                <div className="card-body p-4 p-md-5">
+                  <div className="text-center mb-4">
+                    <h1 className="h2 fw-bold mb-2">Nutrition Tracker</h1>
+                    <p className="text-muted mb-0">
+                      {authMode === "login"
+                        ? "Sign in to access your food diary"
+                        : "Create an account to start tracking"}
+                    </p>
+                  </div>
 
-      <div style={{ marginBottom: "24px" }}>
-        <input
-          type="date"
-          value={selectedDate}
-          onChange={(e) => setSelectedDate(e.target.value)}
-        />
-        <button
-          onClick={() => {
-            fetchMealsForDate(selectedDate);
-            fetchDailySummary(selectedDate);
-          }}
-          style={{ marginLeft: "8px" }}
-        >
-          Load Diary
-        </button>
+                  <form onSubmit={authMode === "login" ? handleLogin : handleRegister}>
+                    <div className="mb-3">
+                      <label className="form-label">Email</label>
+                      <input
+                        type="email"
+                        className="form-control"
+                        placeholder="Enter your email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        required
+                      />
+                    </div>
+
+                    <div className="mb-3">
+                      <label className="form-label">Password</label>
+                      <input
+                        type="password"
+                        className="form-control"
+                        placeholder="Enter your password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        required
+                      />
+                    </div>
+
+                    <button type="submit" className="btn btn-dark w-100">
+                      {authMode === "login" ? "Sign In" : "Create Account"}
+                    </button>
+                  </form>
+
+                  <button
+                    className="btn btn-outline-secondary w-100 mt-3"
+                    onClick={() =>
+                      setAuthMode(authMode === "login" ? "register" : "login")
+                    }
+                  >
+                    {authMode === "login"
+                      ? "Need an account? Sign Up"
+                      : "Already have an account? Sign In"}
+                  </button>
+
+                  {statusMessage && (
+                    <div className="alert alert-secondary mt-3 mb-0" role="alert">
+                      {statusMessage}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
+    );
+  }
 
-      <hr />
-
-      {MEAL_SECTIONS.map((section) => (
-        <div key={section} style={{ marginTop: "24px", marginBottom: "24px" }}>
-          <h2>{section}</h2>
-
-          {groupedSections[section].length === 0 ? (
-            <p>No foods logged for {section.toLowerCase()} yet.</p>
-          ) : (
-            <ul>
-              {groupedSections[section].map((item) => (
-              <li key={item.id} style={{ marginBottom: "8px" }}>
-                {item.food?.name || `Food ID ${item.food_id}`} — {item.grams}g
-                <button
-                  style={{ marginLeft: "8px" }}
-                  onClick={() => handleEditMealItem(item)}
-                >
-                  Edit
-                </button>
-                <button
-                  style={{ marginLeft: "8px" }}
-                  onClick={() => handleDeleteMealItem(item.id)}
-                >
-                  Delete
-                </button>
-              </li>
-            ))}
-            </ul>
-          )}
-
-          <div style={{ display: "grid", gap: "8px", maxWidth: "500px", marginTop: "12px" }}>
-            <select
-              value={mealForms[section].food_id}
-              onChange={(e) =>
-                setMealForms((prev) => ({
-                  ...prev,
-                  [section]: {
-                    ...prev[section],
-                    food_id: e.target.value,
-                  },
-                }))
-              }
-            >
-              <option value="">Choose food from library</option>
-              {foods.map((food) => (
-                <option key={food.id} value={food.id}>
-                  {food.name}
-                </option>
-              ))}
-            </select>
-
-            <input
-              type="number"
-              step="any"
-              placeholder="Grams"
-              value={mealForms[section].grams}
-              onChange={(e) =>
-                setMealForms((prev) => ({
-                  ...prev,
-                  [section]: {
-                    ...prev[section],
-                    grams: e.target.value,
-                  },
-                }))
-              }
-            />
-
-            <button type="button" onClick={() => handleAddFoodToSection(section)}>
-              Add to {section}
+  return (
+    <div className="bg-light min-vh-100">
+      <nav className="navbar navbar-expand-lg bg-white border-bottom">
+        <div className="container">
+          <span className="navbar-brand fw-bold">Nutrition Tracker</span>
+          <div className="d-flex align-items-center gap-3">
+            <span className="text-muted small">
+              Signed in as: {me?.email || "Loading..."}
+            </span>
+            <button className="btn btn-outline-dark btn-sm" onClick={handleLogout}>
+              Logout
             </button>
           </div>
         </div>
-      ))}
+      </nav>
 
-      <hr />
+      <div className="container py-4">
+        {statusMessage && (
+          <div className="alert alert-secondary" role="alert">
+            {statusMessage}
+          </div>
+        )}
 
-      <h2>Nutrition Summary for: {selectedDate}</h2>
-      {dailySummary ? (
-        <div style={{ marginBottom: "24px" }}>
-          <p>
-            <strong>Calories:</strong> {dailySummary.total_calories}
-          </p>
-          <p>
-            <strong>Protein:</strong> {dailySummary.total_protein}
-          </p>
-          <p>
-            <strong>Carbs:</strong> {dailySummary.total_carbs}
-          </p>
-          <p>
-            <strong>Fat:</strong> {dailySummary.total_fat}
-          </p>
+        <div className="card shadow-sm border-0 mb-4">
+          <div className="card-body">
+            <h1 className="h3 mb-3">Food Diary for: {formatDisplayDate(selectedDate)}</h1>
+            <div className="d-flex flex-wrap gap-2 align-items-center">
+              <input
+                type="date"
+                className="form-control"
+                style={{ maxWidth: "220px" }}
+                value={selectedDate}
+                onChange={(e) => setSelectedDate(e.target.value)}
+              />
+              <button
+                className="btn btn-dark"
+                onClick={() => {
+                  fetchMealsForDate(selectedDate);
+                  fetchDailySummary(selectedDate);
+                }}
+              >
+                Load Diary
+              </button>
+            </div>
+          </div>
         </div>
-      ) : (
-        <p>No nutrition summary loaded yet.</p>
-      )}
 
-      <hr />
+        <div className="row g-4">
+          <div className="col-12 col-lg-8">
+            {MEAL_SECTIONS.map((section) => (
+              <div key={section} className="card shadow-sm border-0 mb-4">
+                <div className="card-body">
+                  <h2 className="h5 mb-3">{section}</h2>
 
-      <h2>Add Custom Food</h2>
-      <form
-        onSubmit={handleCreateFood}
-        style={{ display: "grid", gap: "8px", marginBottom: "24px", maxWidth: "600px" }}
-      >
-        <input
-          placeholder="Food name"
-          value={foodForm.name}
-          onChange={(e) => setFoodForm({ ...foodForm, name: e.target.value })}
-        />
-        <input
-          placeholder="Brand"
-          value={foodForm.brand}
-          onChange={(e) => setFoodForm({ ...foodForm, brand: e.target.value })}
-        />
-        <input
-          type="number"
-          step="any"
-          placeholder="Calories per 100g"
-          value={foodForm.calories_per_100g}
-          onChange={(e) =>
-            setFoodForm({ ...foodForm, calories_per_100g: e.target.value })
-          }
-        />
-        <input
-          type="number"
-          step="any"
-          placeholder="Protein per 100g"
-          value={foodForm.protein_per_100g}
-          onChange={(e) =>
-            setFoodForm({ ...foodForm, protein_per_100g: e.target.value })
-          }
-        />
-        <input
-          type="number"
-          step="any"
-          placeholder="Carbs per 100g"
-          value={foodForm.carbs_per_100g}
-          onChange={(e) =>
-            setFoodForm({ ...foodForm, carbs_per_100g: e.target.value })
-          }
-        />
-        <input
-          type="number"
-          step="any"
-          placeholder="Fat per 100g"
-          value={foodForm.fat_per_100g}
-          onChange={(e) =>
-            setFoodForm({ ...foodForm, fat_per_100g: e.target.value })
-          }
-        />
-        <button type="submit">Add Custom Food</button>
-      </form>
-    <hr />
-      
-    <h2>Food Library</h2>
-      <button onClick={fetchFoods}>Refresh Food Library</button>
-      <ul style={{ marginTop: "12px", marginBottom: "24px" }}>
-      {foods.length === 0 ? (
-          <li>No foods available yet.</li>
-        ) : (
-          [...foods]
-            .sort((a, b) => a.name.localeCompare(b.name))
-            .map((food) => (
-            <li key={food.id} style={{ marginBottom: "16px" }}>
-              <div>
-                {food.name} — {food.brand || "No brand"} — {food.calories_per_100g} kcal - ({food.source})
-                <button
-                  style={{ marginLeft: "8px" }}
-                  onClick={() => startEditingFood(food)}
-                >
-                  Edit
-                </button>
-                <button
-                  style={{ marginLeft: "8px" }}
-                  onClick={() => handleDeleteFood(food.id)}
-                >
-                  Delete
-                </button>
+                  {groupedSections[section].length === 0 ? (
+                    <p className="text-muted mb-3">
+                      No foods logged for {section.toLowerCase()} yet.
+                    </p>
+                  ) : (
+                    <ul className="list-group mb-3">
+                      {groupedSections[section].map((item) => (
+                        <li
+                          key={item.id}
+                          className="list-group-item d-flex justify-content-between align-items-center flex-wrap gap-2"
+                        >
+                          <span>
+                            {item.food?.name || `Food ID ${item.food_id}`} — {item.grams}g
+                          </span>
+                          <div className="d-flex gap-2">
+                            <button
+                              className="btn btn-sm btn-outline-secondary"
+                              onClick={() => handleEditMealItem(item)}
+                            >
+                              Edit
+                            </button>
+                            <button
+                              className="btn btn-sm btn-outline-danger"
+                              onClick={() => handleDeleteMealItem(item.id)}
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+
+                  <div className="row g-2">
+                    <div className="col-12 col-md-6">
+                      <select
+                        className="form-select"
+                        value={mealForms[section].food_id}
+                        onChange={(e) =>
+                          setMealForms((prev) => ({
+                            ...prev,
+                            [section]: {
+                              ...prev[section],
+                              food_id: e.target.value,
+                            },
+                          }))
+                        }
+                      >
+                        <option value="">Choose food from library</option>
+                        {foods.map((food) => (
+                          <option key={food.id} value={food.id}>
+                            {food.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="col-12 col-md-3">
+                      <input
+                        type="number"
+                        step="any"
+                        className="form-control"
+                        placeholder="Grams"
+                        value={mealForms[section].grams}
+                        onChange={(e) =>
+                          setMealForms((prev) => ({
+                            ...prev,
+                            [section]: {
+                              ...prev[section],
+                              grams: e.target.value,
+                            },
+                          }))
+                        }
+                      />
+                    </div>
+
+                    <div className="col-12 col-md-3">
+                      <button
+                        type="button"
+                        className="btn btn-dark w-100"
+                        onClick={() => handleAddFoodToSection(section)}
+                      >
+                        Add to {section}
+                      </button>
+                    </div>
+                  </div>
+                </div>
               </div>
+            ))}
+          </div>
 
-              {editingFoodId === food.id && (
-                <div
-                  style={{
-                    marginTop: "10px",
-                    padding: "12px",
-                    border: "1px solid #666",
-                    borderRadius: "8px",
-                    display: "grid",
-                    gap: "8px",
-                    maxWidth: "500px",
-                  }}
-                >
+          <div className="col-12 col-lg-4">
+            <div className="card shadow-sm border-0 mb-4">
+              <div className="card-body">
+                <h2 className="h5 mb-3">Nutrition Summary</h2>
+                {dailySummary ? (
+                  <div className="d-grid gap-2">
+                    <div className="d-flex justify-content-between">
+                      <strong>Calories</strong>
+                      <span>{dailySummary.total_calories}</span>
+                    </div>
+                    <div className="d-flex justify-content-between">
+                      <strong>Protein</strong>
+                      <span>{dailySummary.total_protein}</span>
+                    </div>
+                    <div className="d-flex justify-content-between">
+                      <strong>Carbs</strong>
+                      <span>{dailySummary.total_carbs}</span>
+                    </div>
+                    <div className="d-flex justify-content-between">
+                      <strong>Fat</strong>
+                      <span>{dailySummary.total_fat}</span>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-muted mb-0">No nutrition summary loaded yet.</p>
+                )}
+              </div>
+            </div>
+
+            <div className="card shadow-sm border-0 mb-4">
+              <div className="card-body">
+                <h2 className="h5 mb-3">Add Custom Food</h2>
+                <form onSubmit={handleCreateFood} className="d-grid gap-2">
                   <input
+                    className="form-control"
                     placeholder="Food name"
-                    value={editFoodForm.name}
+                    value={foodForm.name}
                     onChange={(e) =>
-                      setEditFoodForm({ ...editFoodForm, name: e.target.value })
+                      setFoodForm({ ...foodForm, name: e.target.value })
                     }
+                    required
                   />
                   <input
+                    className="form-control"
                     placeholder="Brand"
-                    value={editFoodForm.brand}
+                    value={foodForm.brand}
                     onChange={(e) =>
-                      setEditFoodForm({ ...editFoodForm, brand: e.target.value })
+                      setFoodForm({ ...foodForm, brand: e.target.value })
                     }
                   />
                   <input
+                    className="form-control"
                     type="number"
                     step="any"
                     placeholder="Calories per 100g"
-                    value={editFoodForm.calories_per_100g}
+                    value={foodForm.calories_per_100g}
                     onChange={(e) =>
-                      setEditFoodForm({
-                        ...editFoodForm,
+                      setFoodForm({
+                        ...foodForm,
                         calories_per_100g: e.target.value,
                       })
                     }
+                    required
                   />
                   <input
+                    className="form-control"
                     type="number"
                     step="any"
                     placeholder="Protein per 100g"
-                    value={editFoodForm.protein_per_100g}
+                    value={foodForm.protein_per_100g}
                     onChange={(e) =>
-                      setEditFoodForm({
-                        ...editFoodForm,
+                      setFoodForm({
+                        ...foodForm,
                         protein_per_100g: e.target.value,
                       })
                     }
+                    required
                   />
                   <input
+                    className="form-control"
                     type="number"
                     step="any"
                     placeholder="Carbs per 100g"
-                    value={editFoodForm.carbs_per_100g}
+                    value={foodForm.carbs_per_100g}
                     onChange={(e) =>
-                      setEditFoodForm({
-                        ...editFoodForm,
+                      setFoodForm({
+                        ...foodForm,
                         carbs_per_100g: e.target.value,
                       })
                     }
+                    required
                   />
                   <input
+                    className="form-control"
                     type="number"
                     step="any"
                     placeholder="Fat per 100g"
-                    value={editFoodForm.fat_per_100g}
+                    value={foodForm.fat_per_100g}
                     onChange={(e) =>
-                      setEditFoodForm({
-                        ...editFoodForm,
+                      setFoodForm({
+                        ...foodForm,
                         fat_per_100g: e.target.value,
                       })
                     }
+                    required
                   />
+                  <button type="submit" className="btn btn-dark">
+                    Add Custom Food
+                  </button>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
 
-                  <div style={{ display: "flex", gap: "8px" }}>
-                    <button type="button" onClick={() => saveEditedFood(food.id)}>
-                      Save
-                    </button>
-                    <button type="button" onClick={cancelEditingFood}>
-                      Cancel
-                    </button>
-                  </div>
-                </div>
-              )}
-            </li>
-          ))
-        )}
-      </ul>
-    <hr />
+        <div className="card shadow-sm border-0 mb-4">
+          <div className="card-body">
+            <div className="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+              <h2 className="h5 mb-0">Food Library</h2>
+              <button className="btn btn-outline-dark btn-sm" onClick={fetchFoods}>
+                Refresh Food Library
+              </button>
+            </div>
 
-    <h2>Search External Foods</h2>
-      <div style={{ marginBottom: "12px" }}>
-        <input
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search external foods"
-        />
-        <button onClick={searchExternal} style={{ marginLeft: "8px" }}>
-          Search External Foods
-        </button>
+            {foods.length === 0 ? (
+              <p className="text-muted mb-0">No foods available yet.</p>
+            ) : (
+              <ul className="list-group">
+                {[...foods]
+                  .sort((a, b) => a.name.localeCompare(b.name))
+                  .map((food) => (
+                    <li key={food.id} className="list-group-item">
+                      <div className="d-flex justify-content-between align-items-start flex-wrap gap-2">
+                        <div>
+                          <strong>{food.name}</strong> — {food.brand || "No brand"} —{" "}
+                          {food.calories_per_100g} kcal ({food.source})
+                        </div>
+                        <div className="d-flex gap-2">
+                          <button
+                            className="btn btn-sm btn-outline-secondary"
+                            onClick={() => startEditingFood(food)}
+                          >
+                            Edit
+                          </button>
+                          <button
+                            className="btn btn-sm btn-outline-danger"
+                            onClick={() => handleDeleteFood(food.id)}
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </div>
+
+                      {editingFoodId === food.id && (
+                        <div className="mt-3 p-3 border rounded">
+                          <div className="row g-2">
+                            <div className="col-12 col-md-6">
+                              <input
+                                className="form-control"
+                                placeholder="Food name"
+                                value={editFoodForm.name}
+                                onChange={(e) =>
+                                  setEditFoodForm({
+                                    ...editFoodForm,
+                                    name: e.target.value,
+                                  })
+                                }
+                              />
+                            </div>
+                            <div className="col-12 col-md-6">
+                              <input
+                                className="form-control"
+                                placeholder="Brand"
+                                value={editFoodForm.brand}
+                                onChange={(e) =>
+                                  setEditFoodForm({
+                                    ...editFoodForm,
+                                    brand: e.target.value,
+                                  })
+                                }
+                              />
+                            </div>
+                            <div className="col-12 col-md-3">
+                              <input
+                                className="form-control"
+                                type="number"
+                                step="any"
+                                placeholder="Calories"
+                                value={editFoodForm.calories_per_100g}
+                                onChange={(e) =>
+                                  setEditFoodForm({
+                                    ...editFoodForm,
+                                    calories_per_100g: e.target.value,
+                                  })
+                                }
+                              />
+                            </div>
+                            <div className="col-12 col-md-3">
+                              <input
+                                className="form-control"
+                                type="number"
+                                step="any"
+                                placeholder="Protein"
+                                value={editFoodForm.protein_per_100g}
+                                onChange={(e) =>
+                                  setEditFoodForm({
+                                    ...editFoodForm,
+                                    protein_per_100g: e.target.value,
+                                  })
+                                }
+                              />
+                            </div>
+                            <div className="col-12 col-md-3">
+                              <input
+                                className="form-control"
+                                type="number"
+                                step="any"
+                                placeholder="Carbs"
+                                value={editFoodForm.carbs_per_100g}
+                                onChange={(e) =>
+                                  setEditFoodForm({
+                                    ...editFoodForm,
+                                    carbs_per_100g: e.target.value,
+                                  })
+                                }
+                              />
+                            </div>
+                            <div className="col-12 col-md-3">
+                              <input
+                                className="form-control"
+                                type="number"
+                                step="any"
+                                placeholder="Fat"
+                                value={editFoodForm.fat_per_100g}
+                                onChange={(e) =>
+                                  setEditFoodForm({
+                                    ...editFoodForm,
+                                    fat_per_100g: e.target.value,
+                                  })
+                                }
+                              />
+                            </div>
+                          </div>
+
+                          <div className="d-flex gap-2 mt-3">
+                            <button
+                              className="btn btn-dark btn-sm"
+                              type="button"
+                              onClick={() => saveEditedFood(food.id)}
+                            >
+                              Save
+                            </button>
+                            <button
+                              className="btn btn-outline-secondary btn-sm"
+                              type="button"
+                              onClick={cancelEditingFood}
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </li>
+                  ))}
+              </ul>
+            )}
+          </div>
+        </div>
+
+        <div className="card shadow-sm border-0">
+          <div className="card-body">
+            <h2 className="h5 mb-3">Search External Foods</h2>
+            <div className="row g-2 mb-3">
+              <div className="col-12 col-md-8">
+                <input
+                  className="form-control"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder="Search external foods"
+                />
+              </div>
+              <div className="col-12 col-md-4">
+              <button className="btn btn-dark w-100" onClick={searchExternal} disabled={externalLoading}>
+                {externalLoading ? "Searching..." : "Search External Foods"}
+              </button>
+              </div>
+            </div>
+
+            {externalFoods.length > 0 && (
+              <ul className="list-group">
+                {externalFoods.map((food) => (
+                  <li
+                    key={food.external_id}
+                    className="list-group-item d-flex justify-content-between align-items-center flex-wrap gap-2"
+                  >
+                    <span>
+                      {food.name} — {food.brand} —{" "}
+                      {food.calories_per_100g ?? "N/A"} kcal
+                    </span>
+                    <button
+                      className="btn btn-outline-dark btn-sm"
+                      onClick={() => importExternalFood(food.external_id)}
+                    >
+                      Import
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </div>
       </div>
-
-      <ul style={{ marginBottom: "24px" }}>
-        {externalFoods.map((food) => (
-          <li key={food.external_id} style={{ marginBottom: "10px" }}>
-            {food.name} — {food.brand} — {food.calories_per_100g ?? "N/A"} kcal
-            <button
-              onClick={() => importExternalFood(food.external_id)}
-              style={{ marginLeft: "8px" }}
-            >
-              Import
-            </button>
-          </li>
-        ))}
-      </ul>
     </div>
   );
 }
