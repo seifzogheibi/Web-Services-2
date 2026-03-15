@@ -1,24 +1,16 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
-from app.db.session import SessionLocal
+from app.core.dependencies import get_db, get_current_user
 from app.models.food import Food
-from app.schemas.food import FoodCreate, FoodUpdate, FoodOut
+from app.models.user import User
+from app.schemas.food import FoodCreate, FoodOut, FoodUpdate
 
 router = APIRouter(prefix="/foods", tags=["foods"])
 
 
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-
-
 @router.get("/", response_model=list[FoodOut])
 def list_foods(
-    db: Session = Depends(get_db),
     search: str | None = Query(default=None, description="Search foods by name"),
     brand: str | None = Query(default=None, description="Filter by brand"),
     source: str | None = Query(default=None, description="Filter by data source"),
@@ -26,8 +18,10 @@ def list_foods(
     max_calories: float | None = Query(default=None, description="Maximum calories per 100g"),
     limit: int = Query(default=20, ge=1, le=100),
     offset: int = Query(default=0, ge=0),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
-    query = db.query(Food)
+    query = db.query(Food).filter(Food.user_id == current_user.id)
 
     if search:
         query = query.filter(Food.name.ilike(f"%{search}%"))
@@ -48,8 +42,12 @@ def list_foods(
 
 
 @router.post("/", response_model=FoodOut, status_code=status.HTTP_201_CREATED)
-def create_food(food: FoodCreate, db: Session = Depends(get_db)):
-    db_food = Food(**food.model_dump())
+def create_food(
+    food: FoodCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    db_food = Food(**food.model_dump(), user_id=current_user.id)
     db.add(db_food)
     db.commit()
     db.refresh(db_food)
@@ -57,8 +55,16 @@ def create_food(food: FoodCreate, db: Session = Depends(get_db)):
 
 
 @router.get("/{food_id}", response_model=FoodOut)
-def get_food(food_id: int, db: Session = Depends(get_db)):
-    food = db.get(Food, food_id)
+def get_food(
+    food_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    food = (
+        db.query(Food)
+        .filter(Food.id == food_id, Food.user_id == current_user.id)
+        .first()
+    )
 
     if not food:
         raise HTTPException(status_code=404, detail="Food not found")
@@ -67,8 +73,17 @@ def get_food(food_id: int, db: Session = Depends(get_db)):
 
 
 @router.patch("/{food_id}", response_model=FoodOut)
-def update_food(food_id: int, update: FoodUpdate, db: Session = Depends(get_db)):
-    food = db.get(Food, food_id)
+def update_food(
+    food_id: int,
+    update: FoodUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    food = (
+        db.query(Food)
+        .filter(Food.id == food_id, Food.user_id == current_user.id)
+        .first()
+    )
 
     if not food:
         raise HTTPException(status_code=404, detail="Food not found")
@@ -78,13 +93,20 @@ def update_food(food_id: int, update: FoodUpdate, db: Session = Depends(get_db))
 
     db.commit()
     db.refresh(food)
-
     return food
 
 
 @router.delete("/{food_id}")
-def delete_food(food_id: int, db: Session = Depends(get_db)):
-    food = db.get(Food, food_id)
+def delete_food(
+    food_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    food = (
+        db.query(Food)
+        .filter(Food.id == food_id, Food.user_id == current_user.id)
+        .first()
+    )
 
     if not food:
         raise HTTPException(status_code=404, detail="Food not found")

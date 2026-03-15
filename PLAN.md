@@ -15,6 +15,7 @@
 - [X] External dataset import
 - [X] Frontend demo connected to backend API
 - [X] Complete frontend UI
+- [X] Added user authentication and profile
 - [ ] Tests
 - [ ] Deployment
 - [ ] Final docs PDF + report + slides

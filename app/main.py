@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.routers import foods, meals, analytics, external
+from app.routers import foods, meals, analytics, external, authentication
 
 app = FastAPI(
     title="Nutrition API",
@@ -16,6 +16,7 @@ app.include_router(foods.router)
 app.include_router(meals.router)
 app.include_router(analytics.router)
 app.include_router(external.router)
+app.include_router(authentication.router)
 
 app.add_middleware(
     CORSMiddleware,

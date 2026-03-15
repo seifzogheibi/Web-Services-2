@@ -20,7 +20,10 @@ if config.config_file_name is not None:
 # target_metadata = mymodel.Base.metadata
 # target_metadata = None
 from app.db.base import Base
-from app.models import Food  # noqa: F401
+from app.models.food import Food
+from app.models.user import User
+from app.models.meal import Meal
+from app.models.meal_item import MealItem
 
 target_metadata = Base.metadata
 
