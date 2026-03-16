@@ -17,5 +17,5 @@
 - [X] Complete frontend UI
 - [X] Added user authentication and profile
 - [X] Tests
-- [ ] Deployment
-- [ ] Final docs PDF + report + slides
+- [X] Deployment
+- [X] Final docs PDF + report + slides
