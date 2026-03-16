@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 from app.core.dependencies import get_db, get_current_user
 from app.core.security import hash_password, verify_password, create_access_token
 from app.models.user import User
-from app.schemas.user import UserCreate, UserOut, Token
+from app.schemas.user import UserCreate, UserOut, Token, UserGoalsUpdate
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -42,4 +42,20 @@ def login(
 
 @router.get("/me", response_model=UserOut)
 def get_me(current_user: User = Depends(get_current_user)):
+    return current_user
+
+@router.put("/goals", response_model=UserOut)
+def update_my_goals(
+    goals_in: UserGoalsUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    current_user.daily_calorie_goal = goals_in.daily_calorie_goal
+    current_user.daily_protein_goal = goals_in.daily_protein_goal
+    current_user.daily_carbs_goal = goals_in.daily_carbs_goal
+    current_user.daily_fat_goal = goals_in.daily_fat_goal
+
+    db.add(current_user)
+    db.commit()
+    db.refresh(current_user)
     return current_user

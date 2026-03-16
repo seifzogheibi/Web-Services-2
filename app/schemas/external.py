@@ -9,7 +9,8 @@ class ExternalFoodOut(BaseModel):
     protein_per_100g: float | None = None
     carbs_per_100g: float | None = None
     fat_per_100g: float | None = None
-    source: str = "openfoodfacts"
+    source: str = "usda"
+
 
 class ExternalFoodImportRequest(BaseModel):
-    barcode: str
+    external_id: str

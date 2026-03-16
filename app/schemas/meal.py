@@ -1,6 +1,6 @@
 from datetime import datetime
 from typing import Literal
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from app.schemas.meal_item import MealItemOut
 
@@ -23,7 +23,6 @@ class MealOut(BaseModel):
     name: str
     eaten_at: datetime
     created_at: datetime
-    items: list[MealItemOut] = []
+    items: list[MealItemOut] = Field(default_factory=list)
 
-    class Config:
-        from_attributes = True
+model_config = {"from_attributes": True}

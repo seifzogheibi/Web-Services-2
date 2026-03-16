@@ -1,8 +1,8 @@
-"""initial schema with users
+"""initial schema
 
-Revision ID: 7e81766fa6e7
+Revision ID: 179d5fd5877d
 Revises: 
-Create Date: 2026-03-15 22:22:37.545172
+Create Date: 2026-03-16 10:09:24.551972
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = '7e81766fa6e7'
+revision: str = '179d5fd5877d'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -25,7 +25,11 @@ def upgrade() -> None:
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('email', sa.String(), nullable=False),
     sa.Column('hashed_password', sa.String(), nullable=False),
-    sa.Column('created_at', sa.DateTime(), server_default=sa.text('(CURRENT_TIMESTAMP)'), nullable=False),
+    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('(CURRENT_TIMESTAMP)'), nullable=True),
+    sa.Column('daily_calorie_goal', sa.Float(), nullable=True),
+    sa.Column('daily_protein_goal', sa.Float(), nullable=True),
+    sa.Column('daily_carbs_goal', sa.Float(), nullable=True),
+    sa.Column('daily_fat_goal', sa.Float(), nullable=True),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_index(op.f('ix_users_email'), 'users', ['email'], unique=True)
