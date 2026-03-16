@@ -1,6 +1,9 @@
-# Nutrition API (FastAPI)
+# Nutrition API (FastAPI + React)
 
-REST API for foods, meals, and nutrition analytics.
+Backend available at: https://nutrition-api-seif.onrender.com/docs
+Frontend available at: https://nutrition-api-seif-frontend.onrender.com
+
+A full-stack nutrition tracking application with secure user accounts, personal nutrition goals, private food libraries, meal logging, daily analytics, and external food search/import.
 
 The system separates reusable food definitions from daily consumption events. Foods act as a nutritional reference catalogue, meals represent eating occasions, and meal items record which foods were consumed in each meal and in what quantity.
 
@@ -9,8 +12,22 @@ The system separates reusable food definitions from daily consumption events. Fo
 - SQLAlchemy
 - SQLite
 - Alembic
-- React frontend
-- OpenFoodFacts external dataset
+- React
+- USDA FoodData Central API
+- JWT authentication
+- Pytest for backend testing
+
+## Main Features
+- User registration and login
+- JWT-based authentication
+- Personal daily calorie and macronutrient goals
+- Private user-specific food libraries
+- Custom food creation, editing, and deletion
+- Meal logging by date (Breakfast, Lunch, Dinner, Snack)
+- Daily nutrition analytics
+- Smart Goal Gap Suggestions
+- USDA food search and import
+- Automated backend integration tests
 
 ## Setup Instructions (Linux/Mac)
 1. Clone the repository:
@@ -35,12 +52,9 @@ Swagger UI: http://localhost:8000/docs
 OpenAPI JSON: http://localhost:8000/openapi.json
 API Documentation (PDF): docs/API.pdf
 
-## Project Overview
+## Testing
+Backend automated tests were implemented using pytest and FastAPI’s TestClient.
 
-Main features:
-- Food CRUD operations
-- Meal logging by date
-- Daily nutrition analytics
-- Food diary frontend
-- OpenFoodFacts search and import
-- Local food library editing and deletion
+```bash
+pytest -v
+```
