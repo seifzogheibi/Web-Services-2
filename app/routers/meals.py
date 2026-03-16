@@ -21,6 +21,7 @@ def create_meal(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
+    """Create a meal record owned by the authenticated user."""
     db_meal = Meal(**meal.model_dump(), user_id=current_user.id)
     db.add(db_meal)
     db.commit()
@@ -35,6 +36,7 @@ def update_meal(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
+    """Update a user-owned meal by ID."""
     meal = (
         db.query(Meal)
         .filter(Meal.id == meal_id, Meal.user_id == current_user.id)
@@ -59,6 +61,11 @@ def add_food_to_meal(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
+    """Attach a food item to a meal using the MealItem junction table.
+
+    Both the meal and the selected food must belong to the authenticated user
+    so cross-user access and invalid analytics are prevented.
+    """
     meal = (
         db.query(Meal)
         .filter(Meal.id == meal_id, Meal.user_id == current_user.id)
@@ -92,6 +99,11 @@ def list_meals(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
+    """Return all meals owned by the current user.
+
+    Related meal items and foods are eagerly loaded so the frontend can render
+    full diary data without repeated follow-up queries.
+    """
     meals = (
         db.query(Meal)
         .options(selectinload(Meal.items).selectinload(MealItem.food))
@@ -108,6 +120,7 @@ def get_meals_by_date(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
+    """Return only the meals logged by the current user on a selected date."""
     start_of_day = datetime.combine(date, time.min)
     end_of_day = datetime.combine(date, time.max)
 
@@ -132,6 +145,7 @@ def get_meal(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
+    """Return a single meal with its related foods for the current user."""
     meal = (
         db.query(Meal)
         .options(selectinload(Meal.items).selectinload(MealItem.food))
@@ -151,6 +165,11 @@ def get_meal_nutrition(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
+    """Calculate total nutrition for one user-owned meal.
+
+    Nutritional values are stored per 100g on Food, so each MealItem is scaled
+    using grams / 100 before totals are aggregated.
+    """
     meal = (
         db.query(Meal)
         .options(selectinload(Meal.items).selectinload(MealItem.food))
@@ -190,6 +209,7 @@ def delete_meal(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
+    """Delete a meal only if it belongs to the authenticated user."""
     meal = (
         db.query(Meal)
         .filter(Meal.id == meal_id, Meal.user_id == current_user.id)
@@ -212,6 +232,7 @@ def update_meal_item(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
+    """Update a meal item only if the parent meal belongs to the current user."""
     item = (
         db.query(MealItem)
         .join(Meal, MealItem.meal_id == Meal.id)
@@ -244,6 +265,7 @@ def delete_meal_item(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
+    """Delete a meal item only if it is linked to a user-owned meal."""
     item = (
         db.query(MealItem)
         .join(Meal, MealItem.meal_id == Meal.id)

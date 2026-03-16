@@ -4,6 +4,12 @@ import AppNavbar from "../components/AppNavbar";
 const API = import.meta.env.VITE_API_URL;
 const MEAL_SECTIONS = ["Breakfast", "Lunch", "Dinner", "Snack"];
 
+/*
+  Reusable progress-ring component used to visualise how close the user is
+  to each daily nutrition target. The ring animates smoothly from 0 to the
+  current percentage to make dashboard feedback more dynamic.
+*/
+
 function ProgressCircle({ label, value, goal }) {
   const safeGoal = Number(goal) || 1;
   const safeValue = Number(value) || 0;
@@ -12,6 +18,11 @@ function ProgressCircle({ label, value, goal }) {
 
   const [animatedPercent, setAnimatedPercent] = useState(0);
 
+  /*
+  Load the initial dashboard state when the page opens, including the user's
+  profile, food library, meals for the selected date, nutrition totals,
+  and smart suggestions.
+*/
   useEffect(() => {
     const duration = 2200;
     let animationFrame;
@@ -99,7 +110,12 @@ function DashboardPage() {
     Dinner: { food_id: "", grams: "" },
     Snack: { food_id: "", grams: "" },
   });
-
+  
+    /*
+    Build request headers for authenticated API calls.
+    JSON content type is included by default, but can be disabled for requests
+    that only need the bearer token.
+    */
   function getAuthHeaders(json = true) {
     const headers = {};
     if (token) headers.Authorization = `Bearer ${token}`;
@@ -111,7 +127,13 @@ function DashboardPage() {
     const [year, month, day] = dateString.split("-");
     return `${day}-${month}-${year}`;
   }
+
   
+    /*
+    Convert food names into a cleaner title-style format before displaying them
+    in the dashboard, since imported or stored names may appear in all caps.
+    */
+
   function formatFoodName(name) {
     if (!name) return "Unknown food";
   
@@ -120,6 +142,10 @@ function DashboardPage() {
       .replace(/\b\w/g, (char) => char.toUpperCase());
   }
 
+  /*
+  Normalize backend meal names so they map consistently to the fixed frontend
+  dashboard sections: Breakfast, Lunch, Dinner, and Snack.
+*/
   function normalizeMealName(name) {
     const value = (name || "").trim().toLowerCase();
 
@@ -131,6 +157,10 @@ function DashboardPage() {
     return null;
   }
 
+  /*
+  Group logged meal items under the correct dashboard section by matching
+  backend meal records to the normalized frontend meal labels.
+*/
   function getSectionItems(sectionName) {
     return mealsForDate
       .filter((meal) => normalizeMealName(meal.name) === sectionName)
@@ -182,6 +212,10 @@ function DashboardPage() {
     }
   }
 
+  /*
+  Load the aggregated nutrition totals for the selected date so progress
+  circles can compare the user's consumed values against saved goals.
+*/
   async function fetchDailySummary(date = selectedDate) {
     try {
       const res = await fetch(`${API}/analytics/daily?date=${date}`, {
@@ -195,6 +229,11 @@ function DashboardPage() {
     }
   }
 
+  /*
+  Retrieve Smart Goal Gap Suggestions from the backend.
+  These suggestions recommend foods from the user's library that best fit
+  the remaining calorie and macronutrient gap for the selected day.
+*/
   async function fetchSuggestions(date = selectedDate) {
     try {
       const res = await fetch(`${API}/analytics/suggestions?date=${date}`, {
@@ -210,6 +249,11 @@ function DashboardPage() {
     }
   }
 
+  /*
+  Add a selected food and gram quantity into one of the meal sections.
+  If the section does not yet exist for the chosen date, a meal record is
+  created first and then the food is attached through a meal item.
+*/
   async function handleAddFoodToSection(sectionName) {
     const sectionForm = mealForms[sectionName];
 
@@ -285,6 +329,10 @@ function DashboardPage() {
     }
   }
 
+  /*
+  Update the grams for an already logged meal item, then refresh the diary,
+  nutrition totals, and suggestions so the dashboard stays in sync.
+*/
   async function handleEditMealItem(item) {
     const newGrams = window.prompt("Enter new grams:", item.grams);
     if (!newGrams) return;
@@ -316,6 +364,7 @@ function DashboardPage() {
     }
   }
 
+
   useEffect(() => {
     fetchMe();
     fetchFoods();
@@ -324,6 +373,10 @@ function DashboardPage() {
     fetchSuggestions(selectedDate);
   }, []);
 
+  /*
+  Memoize grouped diary data so each meal section can be rendered cleanly
+  without recalculating the section mapping on every render.
+*/
   const groupedSections = useMemo(() => {
     const result = {};
     for (const section of MEAL_SECTIONS) {

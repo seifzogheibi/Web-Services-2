@@ -9,6 +9,12 @@ function LoginPage() {
   const [password, setPassword] = useState("");
   const [statusMessage, setStatusMessage] = useState("");
 
+  /*
+  Submit login credentials to the backend using form-encoded data,
+  store the returned JWT token, then route the user either to the
+  dashboard or to the goals page depending on whether nutrition goals
+  have already been set for the account.
+*/
   async function handleLogin(e) {
     e.preventDefault();
     setStatusMessage("");

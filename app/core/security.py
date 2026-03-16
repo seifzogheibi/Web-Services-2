@@ -1,3 +1,16 @@
+"""
+This module contains security-related utilities for the application, including
+functions for creating and managing JSON Web Tokens (JWTs) for authentication.
+
+Functions:
+    create_access_token(data: dict, expires_delta: timedelta | None = None) -> str:
+        Generates a JWT access token with an optional expiration time.
+
+Constants:
+    ACCESS_TOKEN_EXPIRE_MINUTES: The default expiration time for access tokens in minutes.
+    SECRET_KEY: The secret key used to sign the JWT.
+    ALGORITHM: The algorithm used for encoding the JWT.
+"""
 import os
 from datetime import datetime, timedelta, timezone
 from jose import jwt
@@ -19,6 +32,7 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
 
 
 def create_access_token(data: dict, expires_delta: timedelta | None = None) -> str:
+
     to_encode = data.copy()
     expire = datetime.now(timezone.utc) + (
         expires_delta or timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)

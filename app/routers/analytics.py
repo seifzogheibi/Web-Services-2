@@ -1,4 +1,25 @@
+"""
+analytics.py
+
+This module provides endpoints for analytics related to daily nutrition and food suggestions.
+It includes functionality to calculate daily nutritional intake and suggest foods to meet
+remaining nutritional goals.
+
+Dependencies:
+- FastAPI for API routing and dependency injection.
+- SQLAlchemy for database interaction.
+- Models and schemas from the app for data representation.
+
+Routes:
+- /analytics/daily: Get daily nutritional intake for a specific date.
+- /analytics/suggestions: Get food suggestions to meet remaining nutritional goals.
+
+Functions:
+- get_daily_nutrition: Calculates and returns the total nutritional intake for a user on a specific date.
+- get_goal_gap_suggestions: Suggests foods to meet the user's remaining nutritional goals for a specific date.
+"""
 from datetime import date as date_type, datetime, time
+
 
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session

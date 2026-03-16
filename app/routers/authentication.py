@@ -1,3 +1,31 @@
+
+"""
+This module defines the authentication-related routes for the FastAPI application.
+
+Routes:
+    - /auth/register: Register a new user.
+    - /auth/login: Authenticate a user and return an access token.
+    - /auth/me: Retrieve the current authenticated user's information.
+    - /auth/goals: Update the current user's daily nutritional goals.
+
+Dependencies:
+    - get_db: Provides a database session.
+    - get_current_user: Retrieves the currently authenticated user.
+
+Models:
+    - User: Represents a user in the database.
+
+Schemas:
+    - UserCreate: Schema for creating a new user.
+    - UserOut: Schema for returning user information.
+    - Token: Schema for returning an access token.
+    - UserGoalsUpdate: Schema for updating user goals.
+
+Utilities:
+    - hash_password: Hashes a plain text password.
+    - verify_password: Verifies a plain text password against a hashed password.
+    - create_access_token: Generates a JWT access token.
+"""
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session

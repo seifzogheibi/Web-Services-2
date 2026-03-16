@@ -18,6 +18,12 @@ if not settings.usda_api_key:
 
 
 def extract_usda_nutrients(food_nutrients: list[dict]) -> dict:
+    """Extract the main nutrition fields needed by the application.
+
+    USDA responses can vary slightly depending on the type of record returned,
+    so this helper checks multiple field names and normalises the output into
+    the app's internal per-100g nutrition structure.
+    """
     nutrients = {
         "calories_per_100g": None,
         "protein_per_100g": None,
@@ -47,19 +53,19 @@ def extract_usda_nutrients(food_nutrients: list[dict]) -> dict:
         if value is None:
             continue
 
-        # Calories
+        # Match the USDA energy field and store it as calories per 100g.
         if "energy" in name and (unit == "kcal" or "atwater" in name or name == "energy"):
             nutrients["calories_per_100g"] = float(value)
 
-        # Protein
+        # Match protein values.
         elif "protein" in name:
             nutrients["protein_per_100g"] = float(value)
 
-        # Carbs
+        # Match carbohydrate values.
         elif "carbohydrate" in name:
             nutrients["carbs_per_100g"] = float(value)
 
-        # Fat
+        # Match total fat values.
         elif "total lipid (fat)" in name or name == "fat":
             nutrients["fat_per_100g"] = float(value)
 
@@ -71,6 +77,13 @@ def search_usda_foods(
     query: str = Query(..., min_length=2),
     current_user: User = Depends(get_current_user),
 ):
+    """Search USDA FoodData Central and return normalized external food results.
+
+    Search results are cached by normalized query to avoid repeated external
+    calls for the same term during a session. The current user dependency
+    protects this endpoint so only authenticated users can perform imports
+    into their private library later.
+    """
     normalized_query = query.strip().lower()
 
     if normalized_query in search_cache:
@@ -91,6 +104,8 @@ def search_usda_foods(
 
             results = []
 
+            """Each search hit is followed by a detail lookup so nutrition values
+            can be extracted consistently before being shown in the frontend."""
             for item in search_data.get("foods", [])[:5]:
                 external_id = item.get("fdcId")
                 if not external_id:
@@ -148,11 +163,17 @@ def import_usda_food(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
+    """Import a USDA food into the authenticated user's private library.
+
+    Imported foods are stored locally so they can be reused in future meal
+    logging and analytics without requiring repeated external API calls.
+    """
     external_id = payload.external_id.strip()
 
     if not external_id:
         raise HTTPException(status_code=400, detail="External ID is required")
 
+    """Avoid importing duplicate USDA records into the same user's library."""
     existing_food = (
         db.query(Food)
         .filter(Food.external_id == external_id, Food.user_id == current_user.id)

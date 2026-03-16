@@ -21,6 +21,11 @@ def list_foods(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
+    """Return foods belonging only to the authenticated user.
+
+    Optional filters support frontend search, browsing, and simple
+    nutrition-based narrowing of the user's private food library.
+    """
     query = db.query(Food).filter(Food.user_id == current_user.id)
 
     if search:
@@ -47,6 +52,7 @@ def create_food(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
+    """Create a food record owned by the current user."""
     db_food = Food(**food.model_dump(), user_id=current_user.id)
     db.add(db_food)
     db.commit()
@@ -60,6 +66,7 @@ def get_food(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
+    """Return a single food only if it belongs to the authenticated user."""
     food = (
         db.query(Food)
         .filter(Food.id == food_id, Food.user_id == current_user.id)
@@ -79,6 +86,7 @@ def update_food(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
+    """Partially update a food record owned by the current user."""
     food = (
         db.query(Food)
         .filter(Food.id == food_id, Food.user_id == current_user.id)
@@ -102,6 +110,7 @@ def delete_food(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
+    """Delete a food only if it belongs to the authenticated user."""
     food = (
         db.query(Food)
         .filter(Food.id == food_id, Food.user_id == current_user.id)

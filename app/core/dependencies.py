@@ -1,3 +1,22 @@
+"""
+This module contains dependency functions for the FastAPI application, 
+including database session management and user authentication.
+
+Functions:
+- get_db: Dependency function to provide a database session for the request.
+- get_current_user: Dependency function to retrieve the currently authenticated user 
+    based on the provided JWT token.
+
+Dependencies:
+- OAuth2PasswordBearer: Used for token-based authentication.
+- jose.jwt: Library for decoding and verifying JWT tokens.
+- fastapi.Depends: Used to declare dependencies for FastAPI routes.
+- sqlalchemy.orm.Session: Provides database session handling.
+
+Usage:
+These dependencies are intended to be used in FastAPI routes to handle 
+authentication and database interactions seamlessly.
+"""
 from jose import JWTError, jwt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
