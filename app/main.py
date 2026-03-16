@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.routers import foods, meals, analytics, external, authentication
 from dotenv import load_dotenv
+
 load_dotenv()
 
 app = FastAPI(
@@ -25,6 +26,7 @@ app.add_middleware(
     allow_origins=[
         "http://localhost:5173",
         "http://127.0.0.1:5173",
+        "https://YOUR-FRONTEND-NAME.onrender.com",
     ],
     allow_credentials=True,
     allow_methods=["*"],

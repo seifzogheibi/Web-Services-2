@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import AppNavbar from "../components/AppNavbar";
 
-const API = "http://127.0.0.1:8000";
+const API = import.meta.env.VITE_API_URL;
 const MEAL_SECTIONS = ["Breakfast", "Lunch", "Dinner", "Snack"];
 
 function ProgressCircle({ label, value, goal }) {
@@ -110,6 +110,14 @@ function DashboardPage() {
   function formatDisplayDate(dateString) {
     const [year, month, day] = dateString.split("-");
     return `${day}-${month}-${year}`;
+  }
+  
+  function formatFoodName(name) {
+    if (!name) return "Unknown food";
+  
+    return name
+      .toLowerCase()
+      .replace(/\b\w/g, (char) => char.toUpperCase());
   }
 
   function normalizeMealName(name) {
@@ -431,7 +439,7 @@ function DashboardPage() {
                   <div key={food.food_id} className="col-12 col-md-4">
                     <div className="card h-100 border-0 external-food-result-card">
                       <div className="card-body">
-                        <h3 className="h6 mb-1">{food.name}</h3>
+                      <h3 className="h6 mb-1">{formatFoodName(food.name)}</h3>
                         <div className="text-muted small mb-2">
                           {food.brand || "No brand"}
                         </div>
@@ -468,7 +476,7 @@ function DashboardPage() {
                       className="list-group-item d-flex justify-content-between align-items-center flex-wrap gap-2"
                     >
                       <span>
-                        {item.food?.name || `Food ID ${item.food_id}`} — {item.grams}g
+                      {item.food?.name ? formatFoodName(item.food.name) : `Food ID ${item.food_id}`} — {item.grams}g
                       </span>
                       <div className="d-flex gap-2">
                         <button
@@ -507,7 +515,7 @@ function DashboardPage() {
                     <option value="">Choose food from library</option>
                     {foods.map((food) => (
                       <option key={food.id} value={food.id}>
-                        {food.name}
+                        {formatFoodName(food.name)}
                       </option>
                     ))}
                   </select>
