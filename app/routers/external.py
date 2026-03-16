@@ -65,64 +65,22 @@ def extract_usda_nutrients(food_nutrients: list[dict]) -> dict:
 
     return nutrients
 
-def score_usda_result(item: dict, query: str) -> int:
-    description = (item.get("description") or "").lower()
-    brand = (item.get("brandOwner") or item.get("brandName") or "").lower()
-    query_words = query.split()
-
-    score = 0
-
-    if description == query:
-        score += 120
-
-    if query in description:
-        score += 60
-
-    if all(word in description for word in query_words):
-        score += 35
-
-    if description.startswith(query):
-        score += 20
-
-    if brand:
-        score += 10
-
-    # Penalise poor match types for general consumer searches
-    penalties = [
-        "powder",
-        "mix",
-        "dry",
-        "concentrate",
-        "flour",
-        "meal replacement powder",
-    ]
-
-    for term in penalties:
-        if term in description and term not in query:
-            score -= 25
-
-    return score
-
 
 @router.get("/usda/search", response_model=list[ExternalFoodOut])
 def search_usda_foods(
     query: str = Query(..., min_length=2),
-    max_calories: float | None = Query(None),
-    min_protein: float | None = Query(None),
     current_user: User = Depends(get_current_user),
 ):
     normalized_query = query.strip().lower()
 
-    cache_key = f"{normalized_query}|max_calories={max_calories}|min_protein={min_protein}"
-
-    if cache_key in search_cache:
-        return search_cache[cache_key]
+    if normalized_query in search_cache:
+        return search_cache[normalized_query]
 
     search_url = "https://api.nal.usda.gov/fdc/v1/foods/search"
     params = {"api_key": settings.usda_api_key}
     payload = {
         "query": normalized_query,
-        "pageSize": 5,
+        "pageSize": 10,
     }
 
     try:
@@ -133,13 +91,7 @@ def search_usda_foods(
 
             results = []
 
-            foods = search_data.get("foods", [])
-            foods = sorted(
-                foods,
-                key=lambda item: score_usda_result(item, normalized_query),
-                reverse=True,
-            )
-            for item in foods[:5]:
+            for item in search_data.get("foods", [])[:5]:
                 external_id = item.get("fdcId")
                 if not external_id:
                     continue
@@ -150,15 +102,6 @@ def search_usda_foods(
                 if not raw_name:
                     continue
 
-                bad_terms = ["nfs", "ready-to-drink", "light,", "nutritional drink or shake"]
-                if any(term in raw_name.lower() for term in bad_terms) and not brand:
-                    continue
-
-                display_name = raw_name.split(",")[0].strip()
-
-                if not display_name:
-                    continue
-
                 detail_url = f"https://api.nal.usda.gov/fdc/v1/food/{external_id}"
                 detail_response = client.get(detail_url, params=params)
                 detail_response.raise_for_status()
@@ -166,18 +109,10 @@ def search_usda_foods(
 
                 nutrients = extract_usda_nutrients(detail_data.get("foodNutrients", []))
 
-                calories = nutrients["calories_per_100g"]
-                if (
-                    calories is not None
-                    and any(word in normalized_query for word in ["shake", "drink", "juice", "cola", "soda"])
-                    and calories > 400
-                ):
-                    continue
-
                 results.append(
                     ExternalFoodOut(
                         external_id=str(external_id),
-                        name=display_name,
+                        name=raw_name,
                         brand=brand,
                         calories_per_100g=nutrients["calories_per_100g"],
                         protein_per_100g=nutrients["protein_per_100g"],
@@ -202,20 +137,8 @@ def search_usda_foods(
             status_code=502,
             detail=f"USDA connection error: {str(e)}",
         )
-    
-    if max_calories is not None:
-        results = [
-            food for food in results
-            if food.calories_per_100g is not None and food.calories_per_100g <= max_calories
-        ]
 
-    if min_protein is not None:
-        results = [
-            food for food in results
-            if food.protein_per_100g is not None and food.protein_per_100g >= min_protein
-        ]
-
-    search_cache[cache_key] = results
+    search_cache[normalized_query] = results
     return results
 
 

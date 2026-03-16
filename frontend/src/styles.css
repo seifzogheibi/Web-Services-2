@@ -181,17 +181,17 @@
   }
   
   .goal-success {
-    background: #fde3e4;
+    background: #fab0b3;
     color: #8c1b2b;
   }
   
   .goal-warning {
-    background: #f7d4d6;
+    background: #e3b9bb;
     color: #8a2434;
   }
   
   .goal-neutral {
-    background: #fff0f1;
+    background: #efe1e2;
     color: #8a3b47;
   }
   
@@ -315,45 +315,6 @@
     align-items: center;
     justify-content: center;
     font-size: 1.4rem;
-  }
-  
-  /* Floating landing page decorative glows */
-  .hero-glow {
-    position: absolute;
-    border-radius: 50%;
-    filter: blur(60px);
-    opacity: 0.32;
-    pointer-events: none;
-    animation: floatGlow 7s ease-in-out infinite;
-  }
-  
-  .hero-glow-1 {
-    width: 260px;
-    height: 260px;
-    background: var(--accent-dark);
-    top: 80px;
-    left: -60px;
-  }
-  
-  .hero-glow-2 {
-    width: 280px;
-    height: 280px;
-    background: var(--accent-tertiary);
-    bottom: 40px;
-    right: -80px;
-    animation-delay: 1.5s;
-  }
-  
-  @keyframes floatGlow {
-    0% {
-      transform: translateY(0px) translateX(0px);
-    }
-    50% {
-      transform: translateY(-12px) translateX(8px);
-    }
-    100% {
-      transform: translateY(0px) translateX(0px);
-    }
   }
   
   /* Landing preview card */

@@ -3,13 +3,6 @@ import AppNavbar from "../components/AppNavbar";
 
 const API = "http://127.0.0.1:8000";
 
-const QUICK_SEARCHES = [
-  { label: "Chicken", value: "chicken" },
-  { label: "Beef", value: "beef" },
-  { label: "Vegan", value: "vegan" },
-  { label: "High Protein", value: "high protein" },
-  { label: "Snack", value: "snack" },
-];
 
 function FoodLibraryPage() {
   const token = localStorage.getItem("token") || "";
@@ -50,6 +43,14 @@ function FoodLibraryPage() {
     if (token) headers.Authorization = `Bearer ${token}`;
     if (json) headers["Content-Type"] = "application/json";
     return headers;
+  }
+
+  function formatFoodName(name) {
+    if (!name) return "Unknown food";
+  
+    return name
+      .toLowerCase()
+      .replace(/\b\w/g, (char) => char.toUpperCase());
   }
 
   async function fetchMe() {
@@ -296,22 +297,6 @@ function FoodLibraryPage() {
               </div>
             </div>
 
-            <div className="mb-3 d-flex flex-wrap gap-2">
-              {QUICK_SEARCHES.map((item) => (
-                <button
-                  key={item.label}
-                  type="button"
-                  className="btn btn-outline-dark btn-sm"
-                  onClick={() => {
-                    setQuery(item.value);
-                    searchExternal(item.value);
-                  }}
-                >
-                  {item.label}
-                </button>
-              ))}
-            </div>
-
             <div className="row g-3 mb-3">
               <div className="col-12 col-lg-12 mt-2">
                 <input
@@ -371,7 +356,7 @@ function FoodLibraryPage() {
                   >
                     <div className="card-body d-flex justify-content-between align-items-center flex-wrap gap-3">
                       <div>
-                        <div className="fw-bold fs-5">{food.name}</div>
+                        <div className="fw-bold fs-5">{formatFoodName(food.name)}</div>
                         <div className="text-muted mb-2">
                           {food.brand || "No brand"}
                         </div>
@@ -492,7 +477,7 @@ function FoodLibraryPage() {
                         <li key={food.id} className="list-group-item">
                           <div className="d-flex justify-content-between align-items-start flex-wrap gap-2">
                             <div>
-                              <strong>{food.name}</strong> — {food.brand || "No brand"} —{" "}
+                              <strong>{formatFoodName(food.name)}</strong> — {food.brand || "No brand"} —{" "}
                               {food.calories_per_100g} kcal ({food.source})
                             </div>
                             <div className="d-flex gap-2">

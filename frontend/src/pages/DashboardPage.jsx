@@ -5,79 +5,79 @@ const API = "http://127.0.0.1:8000";
 const MEAL_SECTIONS = ["Breakfast", "Lunch", "Dinner", "Snack"];
 
 function ProgressCircle({ label, value, goal }) {
-    const safeGoal = Number(goal) || 1;
-    const safeValue = Number(value) || 0;
-    const targetPercentRaw = Math.round((safeValue / safeGoal) * 100);
-    const targetPercentForRing = Math.min(targetPercentRaw, 100);
-  
-    const [animatedPercent, setAnimatedPercent] = useState(0);
-  
-    useEffect(() => {
-      const duration = 2200;
-      let animationFrame;
-  
-      function easeOutCubic(t) {
-        return 1 - Math.pow(1 - t, 3);
-      }
-  
-      function animate(startTime) {
-        function step(now) {
-          const elapsed = now - startTime;
-          const progress = Math.min(elapsed / duration, 1);
-          const eased = easeOutCubic(progress);
-          const nextValue = Math.round(targetPercentForRing * eased);
-  
-          setAnimatedPercent(nextValue);
-  
-          if (progress < 1) {
-            animationFrame = requestAnimationFrame(step);
-          }
-        }
-  
-        animationFrame = requestAnimationFrame(step);
-      }
-  
-      setAnimatedPercent(0);
-      animationFrame = requestAnimationFrame((start) => animate(start));
-  
-      return () => cancelAnimationFrame(animationFrame);
-    }, [targetPercentForRing]);
-  
-    let statusClass = "goal-neutral";
-    let statusText = "In progress";
-  
-    if (targetPercentRaw >= 100) {
-      statusClass = "goal-success";
-      statusText = "Goal reached";
-    } else if (targetPercentRaw >= 80) {
-      statusClass = "goal-warning";
-      statusText = "Almost there";
+  const safeGoal = Number(goal) || 1;
+  const safeValue = Number(value) || 0;
+  const targetPercentRaw = Math.round((safeValue / safeGoal) * 100);
+  const targetPercentForRing = Math.min(targetPercentRaw, 100);
+
+  const [animatedPercent, setAnimatedPercent] = useState(0);
+
+  useEffect(() => {
+    const duration = 2200;
+    let animationFrame;
+
+    function easeOutCubic(t) {
+      return 1 - Math.pow(1 - t, 3);
     }
-  
-    const displayPercent = targetPercentRaw > 100 ? "100%+" : `${animatedPercent}%`;
-  
-    return (
-      <div className="progress-circle-card text-center">
-        <div
-          className="progress-ring mx-auto mb-3"
-          style={{
-            background: `conic-gradient(var(--accent-dark) ${animatedPercent * 3.6}deg, #e9ecef 0deg)`,
-          }}
-        >
-          <div className="progress-ring-inner">
-            <div className="fw-bold fs-5">{displayPercent}</div>
-          </div>
-        </div>
-  
-        <div className="fw-semibold">{label}</div>
-        <div className="text-muted small mb-2">
-        {Number(safeValue.toFixed(1))} / {goal ?? 0}
-        </div>
-  
-        <span className={`goal-badge ${statusClass}`}>{statusText}</span>
-      </div>
-    );
+
+    function animate(startTime) {
+      function step(now) {
+        const elapsed = now - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        const eased = easeOutCubic(progress);
+        const nextValue = Math.round(targetPercentForRing * eased);
+
+        setAnimatedPercent(nextValue);
+
+        if (progress < 1) {
+          animationFrame = requestAnimationFrame(step);
+        }
+      }
+
+      animationFrame = requestAnimationFrame(step);
+    }
+
+    setAnimatedPercent(0);
+    animationFrame = requestAnimationFrame((start) => animate(start));
+
+    return () => cancelAnimationFrame(animationFrame);
+  }, [targetPercentForRing]);
+
+  let statusClass = "goal-neutral";
+  let statusText = "In progress";
+
+  if (targetPercentRaw >= 100) {
+    statusClass = "goal-success";
+    statusText = "Goal reached";
+  } else if (targetPercentRaw >= 80) {
+    statusClass = "goal-warning";
+    statusText = "Almost there";
   }
+
+  const displayPercent = targetPercentRaw > 100 ? "100%+" : `${animatedPercent}%`;
+
+  return (
+    <div className="progress-circle-card text-center">
+      <div
+        className="progress-ring mx-auto mb-3"
+        style={{
+          background: `conic-gradient(var(--accent-dark) ${animatedPercent * 3.6}deg, #e9ecef 0deg)`,
+        }}
+      >
+        <div className="progress-ring-inner">
+          <div className="fw-bold fs-5">{displayPercent}</div>
+        </div>
+      </div>
+
+      <div className="fw-semibold">{label}</div>
+      <div className="text-muted small mb-2">
+        {Number(safeValue.toFixed(1))} / {goal ?? 0}
+      </div>
+
+      <span className={`goal-badge ${statusClass}`}>{statusText}</span>
+    </div>
+  );
+}
 
 function DashboardPage() {
   const token = localStorage.getItem("token") || "";
@@ -91,6 +91,7 @@ function DashboardPage() {
   const [dailySummary, setDailySummary] = useState(null);
   const [statusMessage, setStatusMessage] = useState("");
   const [mealsForDate, setMealsForDate] = useState([]);
+  const [suggestions, setSuggestions] = useState([]);
 
   const [mealForms, setMealForms] = useState({
     Breakfast: { food_id: "", grams: "" },
@@ -186,6 +187,21 @@ function DashboardPage() {
     }
   }
 
+  async function fetchSuggestions(date = selectedDate) {
+    try {
+      const res = await fetch(`${API}/analytics/suggestions?date=${date}`, {
+        headers: getAuthHeaders(false),
+      });
+
+      if (!res.ok) throw new Error("Suggestions failed");
+
+      const data = await res.json();
+      setSuggestions(data);
+    } catch {
+      setSuggestions([]);
+    }
+  }
+
   async function handleAddFoodToSection(sectionName) {
     const sectionForm = mealForms[sectionName];
 
@@ -236,6 +252,7 @@ function DashboardPage() {
 
       await fetchMealsForDate(selectedDate);
       await fetchDailySummary(selectedDate);
+      await fetchSuggestions(selectedDate);
       setStatusMessage(`${sectionName} updated successfully.`);
     } catch {
       setStatusMessage(`Could not update ${sectionName}.`);
@@ -253,6 +270,7 @@ function DashboardPage() {
 
       await fetchMealsForDate(selectedDate);
       await fetchDailySummary(selectedDate);
+      await fetchSuggestions(selectedDate);
       setStatusMessage("Logged food deleted successfully.");
     } catch {
       setStatusMessage("Could not delete logged food.");
@@ -263,13 +281,19 @@ function DashboardPage() {
     const newGrams = window.prompt("Enter new grams:", item.grams);
     if (!newGrams) return;
 
+    const parsedGrams = Number(newGrams);
+    if (Number.isNaN(parsedGrams) || parsedGrams < 0) {
+      setStatusMessage("Please enter a valid non-negative number of grams.");
+      return;
+    }
+
     try {
       const res = await fetch(`${API}/meals/items/${item.id}`, {
         method: "PATCH",
         headers: getAuthHeaders(),
         body: JSON.stringify({
           food_id: item.food_id,
-          grams: Number(newGrams),
+          grams: parsedGrams,
         }),
       });
 
@@ -277,6 +301,7 @@ function DashboardPage() {
 
       await fetchMealsForDate(selectedDate);
       await fetchDailySummary(selectedDate);
+      await fetchSuggestions(selectedDate);
       setStatusMessage("Logged food updated successfully.");
     } catch {
       setStatusMessage("Could not update logged food.");
@@ -288,6 +313,7 @@ function DashboardPage() {
     fetchFoods();
     fetchMealsForDate(selectedDate);
     fetchDailySummary(selectedDate);
+    fetchSuggestions(selectedDate);
   }, []);
 
   const groupedSections = useMemo(() => {
@@ -327,7 +353,7 @@ function DashboardPage() {
               <div>
                 <h2 className="h4 mb-1">Today's Progress</h2>
                 <p className="text-muted mb-0">
-                Track your progress against your daily goals for {formatDisplayDate(selectedDate)}
+                  Track your progress against your daily goals for {formatDisplayDate(selectedDate)}
                 </p>
               </div>
 
@@ -344,6 +370,7 @@ function DashboardPage() {
                   onClick={() => {
                     fetchMealsForDate(selectedDate);
                     fetchDailySummary(selectedDate);
+                    fetchSuggestions(selectedDate);
                   }}
                 >
                   Load Diary
@@ -381,6 +408,46 @@ function DashboardPage() {
                 />
               </div>
             </div>
+          </div>
+        </div>
+
+        <div className="card shadow-sm border-0 mb-4 fade-in-up">
+          <div className="card-body">
+            <h2 className="h5 mb-2">Smart Goal Gap Suggestions</h2>
+            <p className="text-muted mb-2">
+              Recommended foods based on what you still need today.
+            </p>
+            <p className="small text-muted mb-3">
+              This feature moves the app beyond passive tracking by suggesting foods that best fit your remaining nutrition targets.
+            </p>
+
+            {suggestions.length === 0 ? (
+              <p className="text-muted mb-0">
+                No suggestions available yet. Add foods to your library and set your goals.
+              </p>
+            ) : (
+              <div className="row g-3">
+                {suggestions.map((food) => (
+                  <div key={food.food_id} className="col-12 col-md-4">
+                    <div className="card h-100 border-0 external-food-result-card">
+                      <div className="card-body">
+                        <h3 className="h6 mb-1">{food.name}</h3>
+                        <div className="text-muted small mb-2">
+                          {food.brand || "No brand"}
+                        </div>
+                        <div className="small mb-2">
+                          {food.calories_per_100g} kcal · {food.protein_per_100g}g protein ·{" "}
+                          {food.carbs_per_100g}g carbs · {food.fat_per_100g}g fat
+                        </div>
+                        <div className="goal-badge goal-neutral">
+                          {food.reason}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
