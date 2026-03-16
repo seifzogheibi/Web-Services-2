@@ -1,11 +1,10 @@
 import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { Link } from "react-router-dom";
 import AppNavbar from "../components/AppNavbar";
 
 const API = import.meta.env.VITE_API_URL;
 
 function LoginPage() {
-  const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [statusMessage, setStatusMessage] = useState("");
@@ -57,7 +56,7 @@ function LoginPage() {
         meData.daily_carbs_goal != null &&
         meData.daily_fat_goal != null;
 
-      navigate(hasGoals ? "/dashboard" : "/goals");
+    window.location.href = hasGoals ? "/dashboard" : "/goals";
     } catch {
       setStatusMessage("Could not sign in.");
     }
