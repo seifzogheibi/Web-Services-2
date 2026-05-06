@@ -2,11 +2,13 @@
 
 A Python command-line search engine for crawling [quotes.toscrape.com](https://quotes.toscrape.com/), building an inverted index, and searching for pages containing single or multi-word queries.
 
+
 ## Overview
 
 This project was developed for COMP3011 Web Services and Web Data Coursework 2.
 
 The tool crawls the target website, extracts searchable text from each page, builds an inverted index, stores the index in the file system, and allows users to search the index through a command-line interface.
+
 
 ## Features
 
@@ -20,7 +22,8 @@ The tool crawls the target website, extracts searchable text from each page, bui
 - Handles missing words, empty queries, and unloaded indexes
 - Includes a pytest test suite
 
-## Installation
+
+## Installation and Setup
 
 Clone the repository:
 
@@ -31,6 +34,64 @@ pip install -r requirements.txt
 python3 -m venv venv
 source venv/bin/activate
 ```
+
+
+## Usage
+
+Start the command-line tool:
+
+```bash
+python src/main.py
+```
+
+The tool supports the following commands:
+
+### Build the index
+
+```text
+build
+```
+
+This crawls the target website, builds the inverted index, and saves it to `data/index.json`.
+
+### Load the saved index
+
+```text
+load
+```
+
+This loads the previously saved index from the file system.
+
+### Print an index entry
+
+```text
+print love
+```
+
+This prints the inverted index entry for the word `love`, including the pages where it appears, its frequency, and its positions.
+
+### Find pages containing a word
+
+```text
+find love
+```
+
+This returns all pages containing the word `love`.
+
+### Find pages containing multiple words
+
+```text
+find good friends
+```
+
+This returns pages containing both `good` and `friends`.
+
+### Exit the tool
+
+```text
+exit
+```
+
 
 ## Testing
 
@@ -55,3 +116,29 @@ To run tests with coverage:
 ```bash
 pytest --cov=src tests/
 ```
+
+
+## Design Decisions
+
+### Crawler
+
+The crawler starts from the homepage of `quotes.toscrape.com` and follows the website's next-page links until no further page exists. A politeness delay of 6 seconds is used between requests to meet the coursework requirement.
+
+### Text Extraction
+
+The crawler extracts quote text, author names, and tags from each page. These fields were selected because they represent the main searchable content on the target website.
+
+### Inverted Index
+
+The inverted index uses a nested dictionary structure:
+
+```python
+{
+    "word": {
+        "page_url": {
+            "frequency": 2,
+            "positions": [0, 5]
+        }
+    }
+}
+
