@@ -73,11 +73,22 @@ def crawl_website(start_url=BASE_URL, delay=POLITENESS_DELAY):
     """
     pages = {}
     current_url = start_url
+    visited_urls = set()
 
     while current_url is not None:
+        if current_url in visited_urls:
+            print(f"Already visited {current_url}. Stopping crawl to avoid a loop.")
+            break
+
+        visited_urls.add(current_url)
         print(f"Crawling: {current_url}")
 
-        html = fetch_page(current_url)
+        try:
+            html = fetch_page(current_url)
+        except requests.RequestException as error:
+            print(f"Failed to fetch {current_url}: {error}")
+            break
+
         page_text = extract_page_text(html)
         pages[current_url] = page_text
 
