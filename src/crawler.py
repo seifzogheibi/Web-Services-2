@@ -8,7 +8,7 @@ BASE_URL = "https://quotes.toscrape.com/"
 POLITENESS_DELAY = 6
 
 
-def fetch_page(url):
+def fetch_page(url: str) -> str:    
     """
     Fetch the HTML content for a single page.
 
@@ -19,7 +19,7 @@ def fetch_page(url):
     return response.text
 
 
-def extract_page_text(html):
+def extract_page_text(html: str) -> str:
     """
     Extract searchable text from a quotes.toscrape.com page.
 
@@ -47,7 +47,7 @@ def extract_page_text(html):
     return " ".join(text_parts)
 
 
-def find_next_page_url(html, current_url):
+def find_next_page_url(html: str, current_url: str) -> str | None:
     """
     Find the URL of the next page, if one exists.
     """
@@ -65,7 +65,7 @@ def find_next_page_url(html, current_url):
     return urljoin(current_url, href)
 
 
-def crawl_website(start_url=BASE_URL, delay=POLITENESS_DELAY):
+def crawl_website(start_url: str = BASE_URL, delay: int = POLITENESS_DELAY) -> dict[str, str]:
     """
     Crawl all quote pages starting from the given URL.
 

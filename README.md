@@ -141,4 +141,13 @@ The inverted index uses a nested dictionary structure:
         }
     }
 }
+```
 
+
+## GenAI Use
+
+Generative AI was used as a support tool during development. It helped with planning the project structure, explaining inverted index design, suggesting examples of pytest tests, and identifying edge cases to consider.
+
+However, AI-generated suggestions were not accepted without review. For example, one important design decision was whether multi-word search should use OR logic or AND logic. The coursework example states that `find good friends` should return pages containing the words `good` and `friends`, so the implementation uses set intersection to return pages containing all query terms.
+
+AI support was useful for breaking the problem into smaller components, but the final implementation still required manual testing, debugging, and understanding of each function. This was important because the coursework requires that all submitted code can be explained and justified.

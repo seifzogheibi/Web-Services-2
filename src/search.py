@@ -1,7 +1,7 @@
 from src.indexer import tokenize
 
 
-def find_pages(index, query_terms):
+def find_pages(index: dict, query_terms: list[str]) -> list[str]:
     """
     Find pages that contain all query terms.
 
@@ -36,7 +36,7 @@ def find_pages(index, query_terms):
     return sorted(matching_pages)
 
 
-def get_index_entry(index, word):
+def get_index_entry(index: dict, word: str):
     """
     Return the index entry for a single word.
 
