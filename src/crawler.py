@@ -1,6 +1,11 @@
+import time
 import requests
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin
+
+
+BASE_URL = "https://quotes.toscrape.com/"
+POLITENESS_DELAY = 6
 
 
 def fetch_page(url):
@@ -58,3 +63,29 @@ def find_next_page_url(html, current_url):
         return None
 
     return urljoin(current_url, href)
+
+
+def crawl_website(start_url=BASE_URL, delay=POLITENESS_DELAY):
+    """
+    Crawl all quote pages starting from the given URL.
+
+    Returns a dictionary mapping page URLs to extracted searchable text.
+    """
+    pages = {}
+    current_url = start_url
+
+    while current_url is not None:
+        print(f"Crawling: {current_url}")
+
+        html = fetch_page(current_url)
+        page_text = extract_page_text(html)
+        pages[current_url] = page_text
+
+        next_url = find_next_page_url(html, current_url)
+
+        if next_url is not None:
+            time.sleep(delay)
+
+        current_url = next_url
+
+    return pages

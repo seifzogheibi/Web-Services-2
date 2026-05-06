@@ -1,0 +1,27 @@
+{
+  "good": {
+    "page1": {
+      "frequency": 2,
+      "positions": [
+        0,
+        3
+      ]
+    }
+  },
+  "friends": {
+    "page1": {
+      "frequency": 1,
+      "positions": [
+        1
+      ]
+    }
+  },
+  "are": {
+    "page1": {
+      "frequency": 1,
+      "positions": [
+        2
+      ]
+    }
+  }
+}
