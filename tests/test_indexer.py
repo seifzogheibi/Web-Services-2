@@ -70,4 +70,3 @@ def test_load_index_raises_error_for_missing_file(tmp_path):
 
     with pytest.raises(FileNotFoundError):
         load_index(missing_path)
-        

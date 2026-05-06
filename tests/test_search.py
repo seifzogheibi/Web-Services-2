@@ -120,3 +120,4 @@ def test_get_index_entry_returns_none_for_invalid_word():
     result = get_index_entry(index, "!!!")
 
     assert result is None
+    
