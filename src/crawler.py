@@ -1,5 +1,6 @@
 import requests
 from bs4 import BeautifulSoup
+from urllib.parse import urljoin
 
 
 def fetch_page(url):
@@ -39,3 +40,21 @@ def extract_page_text(html):
             text_parts.append(tag.get_text(" ", strip=True))
 
     return " ".join(text_parts)
+
+
+def find_next_page_url(html, current_url):
+    """
+    Find the URL of the next page, if one exists.
+    """
+    soup = BeautifulSoup(html, "html.parser")
+    next_link = soup.select_one("li.next a")
+
+    if next_link is None:
+        return None
+
+    href = next_link.get("href")
+
+    if href is None:
+        return None
+
+    return urljoin(current_url, href)
