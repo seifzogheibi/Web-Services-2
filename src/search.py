@@ -5,8 +5,8 @@ def find_pages(index: dict, query_terms: list[str]) -> list[str]:
     """
     Find pages that contain all query terms.
 
-    This uses AND search logic. For example, searching for
-    "good friends" returns only pages containing both words.
+    Results are ranked by the combined frequency of the query terms
+    on each matching page.
     """
     if not query_terms:
         return []
@@ -33,7 +33,27 @@ def find_pages(index: dict, query_terms: list[str]) -> list[str]:
         else:
             matching_pages = matching_pages.intersection(pages_for_term)
 
-    return sorted(matching_pages)
+    if matching_pages is None:
+        return []
+
+    page_scores = {}
+
+    for page in matching_pages:
+        score = 0
+
+        for term in normalised_terms:
+            score += index[term][page]["frequency"]
+
+        page_scores[page] = score
+
+    ranked_pages = sorted(
+        page_scores,
+        key=page_scores.get,
+        reverse=True
+    )
+
+    return ranked_pages
+
 
 
 def get_index_entry(index: dict, word: str):

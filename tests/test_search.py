@@ -120,4 +120,15 @@ def test_get_index_entry_returns_none_for_invalid_word():
     result = get_index_entry(index, "!!!")
 
     assert result is None
-    
+
+def test_find_pages_ranks_results_by_combined_frequency():
+    index = {
+        "good": {
+            "page1": {"frequency": 1, "positions": [0]},
+            "page2": {"frequency": 3, "positions": [0, 2, 4]}
+        }
+    }
+
+    result = find_pages(index, ["good"])
+
+    assert result == ["page2", "page1"]
