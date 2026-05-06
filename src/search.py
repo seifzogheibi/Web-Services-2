@@ -34,3 +34,22 @@ def find_pages(index, query_terms):
             matching_pages = matching_pages.intersection(pages_for_term)
 
     return sorted(matching_pages)
+
+
+def get_index_entry(index, word):
+    """
+    Return the index entry for a single word.
+
+    The word is normalised so that search is case-insensitive.
+    """
+    words = tokenize(word)
+
+    if not words:
+        return None
+
+    normalised_word = words[0]
+
+    if normalised_word not in index:
+        return None
+
+    return index[normalised_word]
