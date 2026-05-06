@@ -1,4 +1,5 @@
-from src.indexer import load_index
+from src.crawler import crawl_website
+from src.indexer import build_index, load_index, save_index
 from src.search import find_pages, get_index_entry
 
 
@@ -42,7 +43,11 @@ def handle_command(command, current_index):
         return current_index, "exit"
 
     elif action == "build":
-        print("Build command selected.")
+        print("Building index...")
+        pages = crawl_website()
+        current_index = build_index(pages)
+        save_index(current_index)
+        print("Index built and saved successfully.")
 
     elif action == "load":
         try:
