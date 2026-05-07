@@ -167,6 +167,20 @@ pip install -r requirements.txt
 ```
 
 
+ ## Performance and Complexity
+
+The project uses an inverted index so that search does not need to scan every page at query time.
+
+For a single-word query, lookup is approximately `O(1)` on average because Python dictionaries are used to access the word entry directly.
+
+For a multi-word query, the main cost is set intersection across the pages containing each query term. This is more efficient than scanning every indexed document for every search.
+
+The project also includes a small benchmark script:
+
+```bash
+python src/benchmark.py
+```
+
 ## Testing Strategy
 
 The project includes unit tests for the main components:
