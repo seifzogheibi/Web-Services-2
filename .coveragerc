@@ -1,5 +1,7 @@
 [run]
 source = src
+omit =
+    src/benchmark.py
 
 [report]
 show_missing = True
