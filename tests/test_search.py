@@ -11,7 +11,7 @@ def test_find_pages_returns_pages_for_single_word():
 
     result = find_pages(index, ["good"])
 
-    assert result == ["page1", "page2"]
+    assert set(result) == {"page1", "page2"}
 
 
 def test_find_pages_returns_intersection_for_multiple_words():

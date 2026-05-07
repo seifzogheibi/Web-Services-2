@@ -78,13 +78,13 @@ def handle_command(command, current_index):
                 pages = find_phrase_pages(current_index, phrase)
             else:
                 pages = find_pages(current_index, arguments)
-                
-                if not pages:
-                    print("No matching pages found.")
-                else:
-                    print("Matching pages:")
-                    for page in pages:
-                        print(f"- {page}")
+
+            if not pages:
+                print("No matching pages found.")
+            else:
+                print("Matching pages:")
+                for page in pages:
+                    print(f"- {page}")
 
     else:
         print(f"Unknown command: {action}")
