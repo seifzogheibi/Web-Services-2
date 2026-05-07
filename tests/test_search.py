@@ -1,4 +1,4 @@
-from src.search import find_pages, get_index_entry
+from src.search import find_pages, get_index_entry, find_phrase_pages
 
 
 def test_find_pages_returns_pages_for_single_word():
@@ -132,3 +132,46 @@ def test_find_pages_ranks_results_by_tfidf_score():
     result = find_pages(index, ["good"])
 
     assert result == ["page2", "page1"]
+
+def test_find_phrase_pages_returns_page_for_exact_phrase():
+    index = {
+        "good": {
+            "page1": {"frequency": 1, "positions": [0]},
+            "page2": {"frequency": 1, "positions": [3]}
+        },
+        "friends": {
+            "page1": {"frequency": 1, "positions": [1]},
+            "page2": {"frequency": 1, "positions": [1]}
+        }
+    }
+
+    result = find_phrase_pages(index, "good friends")
+
+    assert result == ["page1"]
+
+
+def test_find_phrase_pages_returns_empty_list_when_words_are_not_consecutive():
+    index = {
+        "good": {
+            "page1": {"frequency": 1, "positions": [0]}
+        },
+        "friends": {
+            "page1": {"frequency": 1, "positions": [3]}
+        }
+    }
+
+    result = find_phrase_pages(index, "good friends")
+
+    assert result == []
+
+
+def test_find_phrase_pages_returns_empty_list_for_missing_phrase_word():
+    index = {
+        "good": {
+            "page1": {"frequency": 1, "positions": [0]}
+        }
+    }
+
+    result = find_phrase_pages(index, "good friends")
+
+    assert result == []

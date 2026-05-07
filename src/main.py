@@ -1,6 +1,6 @@
 from src.crawler import crawl_website
 from src.indexer import build_index, load_index, save_index
-from src.search import find_pages, get_index_entry
+from src.search import find_pages, get_index_entry, find_phrase_pages
 
 
 def show_help():
@@ -71,14 +71,20 @@ def handle_command(command, current_index):
         elif current_index is None:
             print("No index loaded. Run 'load' or 'build' first.")
         else:
-            pages = find_pages(current_index, arguments)
+            query = " ".join(arguments)
 
-            if not pages:
-                print("No matching pages found.")
+            if query.startswith('"') and query.endswith('"'):
+                phrase = query.strip('"')
+                pages = find_phrase_pages(current_index, phrase)
             else:
-                print("Matching pages:")
-                for page in pages:
-                    print(f"- {page}")
+                pages = find_pages(current_index, arguments)
+                
+                if not pages:
+                    print("No matching pages found.")
+                else:
+                    print("Matching pages:")
+                    for page in pages:
+                        print(f"- {page}")
 
     else:
         print(f"Unknown command: {action}")
