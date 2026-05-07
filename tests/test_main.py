@@ -1,4 +1,4 @@
-from src.main import handle_command
+from src.main import handle_command, print_query_explanation
 
 
 def test_empty_command_does_nothing():
@@ -60,4 +60,24 @@ def test_print_command_with_loaded_index_keeps_index():
 
     assert current_index == index
     assert result is None
-    
+
+def test_print_query_explanation_for_standard_search(capsys):
+    print_query_explanation("good friends", False)
+
+    output = capsys.readouterr().out
+
+    assert "Query explanation:" in output
+    assert "Mode: multi-word AND search" in output
+    assert "Ranking: TF-IDF" in output
+    assert "Terms: good friends" in output
+
+
+def test_print_query_explanation_for_phrase_search(capsys):
+    print_query_explanation('"good friends"', True)
+
+    output = capsys.readouterr().out
+
+    assert "Query explanation:" in output
+    assert "Mode: exact phrase search" in output
+    assert "Ranking: TF-IDF" in output
+    assert "Phrase: good friends" in output

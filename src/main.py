@@ -12,6 +12,21 @@ def show_help():
     print("  help               Show this help message")
     print("  exit               Exit the program")
 
+def print_query_explanation(query, is_phrase_search):
+    """
+    Print a short explanation of how the query will be processed.
+    """
+    print("Query explanation:")
+
+    if is_phrase_search:
+        phrase = query.strip('"')
+        print("- Mode: exact phrase search")
+        print("- Ranking: TF-IDF")
+        print(f"- Phrase: {phrase}")
+    else:
+        print("- Mode: multi-word AND search")
+        print("- Ranking: TF-IDF")
+        print(f"- Terms: {query}")
 
 def print_index_entry(entry):
     """
@@ -72,8 +87,11 @@ def handle_command(command, current_index):
             print("No index loaded. Run 'load' or 'build' first.")
         else:
             query = " ".join(arguments)
+            is_phrase_search = query.startswith('"') and query.endswith('"')
 
-            if query.startswith('"') and query.endswith('"'):
+            print_query_explanation(query, is_phrase_search)
+
+            if is_phrase_search:
                 phrase = query.strip('"')
                 pages = find_phrase_pages(current_index, phrase)
             else:

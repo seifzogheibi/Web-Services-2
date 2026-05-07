@@ -56,8 +56,7 @@ def _rank_pages_by_tfidf(index: dict, pages: set[str], terms: list[str]) -> list
 
     ranked_pages = sorted(
         page_scores,
-        key=page_scores.get,
-        reverse=True
+        key=lambda page: (-page_scores[page], page)
     )
 
     return ranked_pages

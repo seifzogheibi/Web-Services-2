@@ -19,6 +19,9 @@ The tool crawls the target website, extracts searchable text from each page, bui
 - Stores word frequency and word positions
 - Saves and loads the index from JSON
 - Supports single-word and multi-word search queries
+- Supports exact phrase search using word positions
+- Ranks search results using TF-IDF
+- Prints query explanations before displaying search results
 - Handles missing words, empty queries, and unloaded indexes
 - Includes a pytest test suite
 
@@ -30,8 +33,18 @@ Clone the repository:
 ```bash
 git clone https://github.com/seifzogheibi/Web-Services-2.git
 cd Web-Services-2
+```
+
+Create and activate a virtual environment:
+
+```bash
 python3 -m venv venv
 source venv/bin/activate
+```
+
+Install dependencies:
+
+```bash
 pip install -r requirements.txt
 ```
 
@@ -86,6 +99,14 @@ find good friends
 
 This returns pages containing both `good` and `friends`.
 
+### Find pages containing an exact phrase
+
+```text
+find "good friends"
+```
+
+This uses the stored word positions in the inverted index to return pages where the words appear consecutively as an exact phrase.
+
 ### Exit the tool
 
 ```text
@@ -98,21 +119,26 @@ exit
 The project uses `pytest` for unit testing.
 
 To run all tests:
+
 ```bash
 pytest
 ```
 
 To run a specific test file:
+
 ```bash
 pytest tests/test_indexer.py
 ```
 
 To run tests with coverage:
+
 ```bash
 pytest --cov=src tests/
 ```
 
-# Documentation
+
+## Documentation
+
 ## Design Decisions
 
 ### Crawler
@@ -144,7 +170,9 @@ This structure allows fast lookup from a word to all pages where it appears. Eac
 
 Search is case-insensitive. Multi-word queries use AND logic, meaning that `find good friends` returns only pages that contain both `good` and `friends`.
 
-Search results are ranked by the combined frequency of the query terms on each page.
+Search results are ranked using a simple TF-IDF score, so pages with more relevant query-term matches are returned first.
+
+The tool also supports exact phrase search using quoted queries such as `find "good friends"`. This uses the word positions stored in the inverted index to check whether the terms appear consecutively.
 
 ### Storage
 
@@ -161,13 +189,32 @@ The main dependencies are:
 - `pytest-cov` for test coverage
 
 They can be installed using:
-```bash
 
+```bash
 pip install -r requirements.txt
 ```
 
 
- ## Performance and Complexity
+### Query Explanation
+
+The `find` command prints a short explanation before displaying results. This shows whether the query is being processed as a standard multi-word AND search or as an exact phrase search.
+
+Examples:
+
+```text
+find good friends
+```
+
+uses multi-word AND search with TF-IDF ranking.
+
+```text
+find "good friends"
+```
+
+uses exact phrase search with TF-IDF ranking.
+
+
+## Performance and Complexity
 
 The project uses an inverted index so that search does not need to scan every page at query time.
 
@@ -181,14 +228,45 @@ The project also includes a small benchmark script:
 python src/benchmark.py
 ```
 
+This reports:
+
+- Number of indexed pages
+- Number of unique words
+- Total word occurrences
+- Index file size
+- Average search time for a sample query
+
+
 ## Testing Strategy
 
 The project includes unit tests for the main components:
 
 - `test_indexer.py` checks tokenisation, frequency counting, word positions, multiple pages, and JSON storage.
-- `test_search.py` checks single-word search, multi-word search, case-insensitive queries, punctuation handling, missing words, empty queries, and result ranking.
-- `test_crawler.py` checks quote text extraction, author extraction, tag extraction, and next-page detection.
+- `test_search.py` checks single-word search, multi-word search, case-insensitive queries, punctuation handling, missing words, empty queries, TF-IDF ranking, and exact phrase search.
+- `test_crawler.py` checks quote text extraction, author extraction, tag extraction, next-page detection, request handling, crawler error handling, and mocked crawling behaviour.
 - `test_main.py` checks basic command handling and ensures invalid or incomplete commands do not crash the program.
+- `.coveragerc` is included to focus coverage reporting on the `src` directory and show missing lines.
+
+
+## Novelty and Search Engine Context
+
+This project is intentionally smaller than full search frameworks such as Scrapy or Whoosh, but it applies several ideas from real search engine design in a transparent coursework implementation.
+
+Scrapy supports scalable crawling features such as download delays, concurrency control, and AutoThrottle for crawl politeness. In this project, I implemented a simpler Requests-based crawler with an explicit 6-second politeness delay so the crawling behaviour is easy to inspect and explain.
+
+Whoosh is a more mature Python search library that supports ranking models such as BM25F. My implementation does not attempt to replicate a full search library, but it adds TF-IDF ranking to move beyond basic keyword matching and return results in a relevance-based order.
+
+The main novelty of this implementation is the combination of:
+
+- A polite crawler using Requests and BeautifulSoup
+- A positional inverted index storing frequency and word positions
+- Multi-word AND search
+- TF-IDF ranked retrieval
+- Exact phrase search using positional postings
+- Query explanation output showing how the query is processed
+- Basic benchmarking for index statistics and search time
+
+This makes the tool more advanced than a simple word-to-page lookup while keeping the full search pipeline visible and explainable.
 
 
 ## GenAI Use
