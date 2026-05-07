@@ -58,59 +58,13 @@ python src/main.py
 ```
 
 The tool supports the following commands:
-
-### Build the index
-
 ```text
-build
-```
-
-This crawls the target website, builds the inverted index, and saves it to `data/index.json`.
-
-### Load the saved index
-
-```text
-load
-```
-
-This loads the previously saved index from the file system.
-
-### Print an index entry
-
-```text
-print love
-```
-
-This prints the inverted index entry for the word `love`, including the pages where it appears, its frequency, and its positions.
-
-### Find pages containing a word
-
-```text
-find love
-```
-
-This returns all pages containing the word `love`.
-
-### Find pages containing multiple words
-
-```text
-find good friends
-```
-
-This returns pages containing both `good` and `friends`.
-
-### Find pages containing an exact phrase
-
-```text
-find "good friends"
-```
-
-This uses the stored word positions in the inverted index to return pages where the words appear consecutively as an exact phrase.
-
-### Exit the tool
-
-```text
-exit
+build:                      This crawls the target website, builds the inverted index, and saves it to `data/index.json`.
+load:                       This loads the previously saved index from the file system.
+print <word>:               This prints the inverted index entry for '<word>', including the pages where it appears, its frequency, and its positions.
+find <word1> [<word2> ...]: This finds all pages containing the specified words.
+find "<exact phrase>":      This finds all pages containing the exact phrase.
+exit:                       This exits the tool.
 ```
 
 
@@ -246,6 +200,7 @@ The project includes unit tests for the main components:
 - `test_crawler.py` checks quote text extraction, author extraction, tag extraction, next-page detection, request handling, crawler error handling, and mocked crawling behaviour.
 - `test_main.py` checks basic command handling and ensures invalid or incomplete commands do not crash the program.
 - `.coveragerc` is included to focus coverage reporting on the `src` directory and show missing lines.
+- `.github/workflows/tests.yml` is included to run tests and report coverage on every push to GitHub.
 
 
 ## Novelty and Search Engine Context
