@@ -13,6 +13,3 @@ venv/
 .DS_Store
 .vscode/
 .idea/
-
-# Generated data files
-data/index.json

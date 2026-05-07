@@ -30,9 +30,9 @@ Clone the repository:
 ```bash
 git clone https://github.com/seifzogheibi/Web-Services-2.git
 cd Web-Services-2
-pip install -r requirements.txt
 python3 -m venv venv
 source venv/bin/activate
+pip install -r requirements.txt
 ```
 
 
@@ -107,17 +107,12 @@ To run a specific test file:
 pytest tests/test_indexer.py
 ```
 
-To run a specific test function:
-```bash
-pytest tests/test_indexer.py::test_tokenize
-```
-
 To run tests with coverage:
 ```bash
 pytest --cov=src tests/
 ```
 
-
+# Documentation
 ## Design Decisions
 
 ### Crawler
@@ -142,6 +137,44 @@ The inverted index uses a nested dictionary structure:
     }
 }
 ```
+
+This structure allows fast lookup from a word to all pages where it appears. Each page entry stores the word frequency and word positions, which provides useful statistics for search and inspection.
+
+### Search Logic
+
+Search is case-insensitive. Multi-word queries use AND logic, meaning that `find good friends` returns only pages that contain both `good` and `friends`.
+
+Search results are ranked by the combined frequency of the query terms on each page.
+
+### Storage
+
+The index is saved as a JSON file in `data/index.json`. JSON was chosen because it is readable, easy to debug, and simple to load back into Python.
+
+
+## Dependencies
+
+The main dependencies are:
+
+- `requests` for HTTP requests
+- `beautifulsoup4` for HTML parsing
+- `pytest` for testing
+- `pytest-cov` for test coverage
+
+They can be installed using:
+```bash
+
+pip install -r requirements.txt
+```
+
+
+## Testing Strategy
+
+The project includes unit tests for the main components:
+
+- `test_indexer.py` checks tokenisation, frequency counting, word positions, multiple pages, and JSON storage.
+- `test_search.py` checks single-word search, multi-word search, case-insensitive queries, punctuation handling, missing words, empty queries, and result ranking.
+- `test_crawler.py` checks quote text extraction, author extraction, tag extraction, and next-page detection.
+- `test_main.py` checks basic command handling and ensures invalid or incomplete commands do not crash the program.
 
 
 ## GenAI Use

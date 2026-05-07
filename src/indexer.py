@@ -64,4 +64,3 @@ def load_index(path: Path = DEFAULT_INDEX_PATH) -> dict[str, dict[str, dict[str,
     with open(path, "r", encoding="utf-8") as file:
         return json.load(file)
     
-    

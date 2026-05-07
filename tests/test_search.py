@@ -121,7 +121,7 @@ def test_get_index_entry_returns_none_for_invalid_word():
 
     assert result is None
 
-def test_find_pages_ranks_results_by_combined_frequency():
+def test_find_pages_ranks_results_by_tfidf_score():
     index = {
         "good": {
             "page1": {"frequency": 1, "positions": [0]},
