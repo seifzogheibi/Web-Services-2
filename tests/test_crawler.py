@@ -5,6 +5,7 @@ import requests
 
 from src.crawler import crawl_website, extract_page_text, fetch_page, find_next_page_url
 
+# a sample HTML page with one quote, author, tags, and a next page link to test the crawler's parsing functions and next page URL extraction
 SAMPLE_HTML = """
 <html>
     <body>
@@ -27,13 +28,13 @@ SAMPLE_HTML = """
 </html>
 """
 
-
+# this test checks that the main quote text is included in the extracted text for the page, so it can be found by search queries
 def test_extract_page_text_includes_quote_text():
     text = extract_page_text(SAMPLE_HTML)
 
     assert "The world as we have created it" in text
 
-
+# the crawler should include the author name in the extracted text to make it searchable, so we test that here
 def test_extract_page_text_includes_author():
     text = extract_page_text(SAMPLE_HTML)
 

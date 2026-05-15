@@ -54,7 +54,7 @@ pip install -r requirements.txt
 Start the command-line tool:
 
 ```bash
-python src/main.py
+python3 -m src.main
 ```
 
 The tool supports the following commands:
@@ -70,7 +70,7 @@ exit:                       This exits the tool.
 
 ## Testing
 
-The project uses `pytest` for unit testing.
+The project uses `pytest` for unit testing. The test suite includes unit tests for the benchmark utility and uses monkeypatching to test build/load command behaviour without performing live crawls during testing.
 
 To run all tests:
 
@@ -199,6 +199,8 @@ The project includes unit tests for the main components:
 - `test_search.py` checks single-word search, multi-word search, case-insensitive queries, punctuation handling, missing words, empty queries, TF-IDF ranking, and exact phrase search.
 - `test_crawler.py` checks quote text extraction, author extraction, tag extraction, next-page detection, request handling, crawler error handling, and mocked crawling behaviour.
 - `test_main.py` checks basic command handling and ensures invalid or incomplete commands do not crash the program.
+- `test_benchmark.py` checks that the benchmark script runs without errors and reports expected metrics.
+
 - `.coveragerc` is included to focus coverage reporting on the `src` directory and show missing lines.
 - `.github/workflows/tests.yml` is included to run tests and report coverage on every push to GitHub.
 

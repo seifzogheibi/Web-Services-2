@@ -7,6 +7,7 @@ def _normalise_query_terms(query_terms: list[str]) -> list[str]:
     """
     Convert query input into lowercase searchable terms.
     """
+    # clean each query term in the same way as the indexed page text
     normalised_terms = []
 
     for term in query_terms:
@@ -20,6 +21,7 @@ def _get_total_document_count(index: dict) -> int:
     """
     Count the number of unique pages in the index.
     """
+    # collect pages in a set so each page is only counted once
     pages = set()
 
     for word_entries in index.values():
@@ -32,13 +34,20 @@ def _calculate_tfidf_score(index: dict, page: str, terms: list[str], total_docum
     """
     Calculate a simple TF-IDF score for a page and query terms.
     """
+    # start with a score of zero and add each query term's contribution
     score = 0.0
 
     for term in terms:
+        # term frequency measures how often the term appears on this page
         term_frequency = index[term][page]["frequency"]
+
+        # document frequency measures how many pages contain this term
         document_frequency = len(index[term])
 
+        # idf gives more weight to terms that appear in fewer pages
         inverse_document_frequency = math.log((total_documents + 1) / (document_frequency + 1)) + 1
+
+        # add the term's weighted score to the page score
         score += term_frequency * inverse_document_frequency
 
     return score
@@ -48,12 +57,15 @@ def _rank_pages_by_tfidf(index: dict, pages: set[str], terms: list[str]) -> list
     """
     Rank matching pages using TF-IDF.
     """
+    # total document count is needed for the idf part of tf-idf
     total_documents = _get_total_document_count(index)
     page_scores = {}
 
+    # calculate one relevance score for each matching page
     for page in pages:
         page_scores[page] = _calculate_tfidf_score(index, page, terms, total_documents)
 
+    # sort by highest score first, then by page name to keep ties predictable
     ranked_pages = sorted(
         page_scores,
         key=lambda page: (-page_scores[page], page)
@@ -68,22 +80,27 @@ def _page_contains_phrase(index: dict, page: str, phrase_terms: list[str]) -> bo
 
     This uses the word positions stored in the inverted index.
     """
+    # an empty phrase cannot be matched
     if not phrase_terms:
         return False
 
     first_term = phrase_terms[0]
 
+    # if the first word is missing, the full phrase cannot exist
     if first_term not in index:
         return False
 
+    # the phrase cannot exist on this page if the first word is not there
     if page not in index[first_term]:
         return False
 
+    # try each position where the first word appears
     starting_positions = index[first_term][page]["positions"]
 
     for start_position in starting_positions:
         phrase_found = True
 
+        # check whether each following word appears in the next position
         for offset, term in enumerate(phrase_terms[1:], start=1):
             if term not in index:
                 phrase_found = False
@@ -95,6 +112,7 @@ def _page_contains_phrase(index: dict, page: str, phrase_terms: list[str]) -> bo
 
             expected_position = start_position + offset
 
+            # if the word is not in the expected position, this phrase attempt fails
             if expected_position not in index[term][page]["positions"]:
                 phrase_found = False
                 break
@@ -112,9 +130,11 @@ def find_pages(index: dict, query_terms: list[str]) -> list[str]:
     Results are ranked using a simple TF-IDF score so that pages with
     more relevant term matches appear first.
     """
+    # reject empty queries early
     if not query_terms:
         return []
 
+    # clean the query terms before looking them up in the index
     normalised_terms = _normalise_query_terms(query_terms)
 
     if not normalised_terms:
@@ -122,6 +142,7 @@ def find_pages(index: dict, query_terms: list[str]) -> list[str]:
 
     matching_pages = None
 
+    # use set intersection so every returned page contains every query term
     for term in normalised_terms:
         if term not in index:
             return []
@@ -136,6 +157,7 @@ def find_pages(index: dict, query_terms: list[str]) -> list[str]:
     if matching_pages is None:
         return []
 
+    # rank the matching pages before returning them
     return _rank_pages_by_tfidf(index, matching_pages, normalised_terms)
 
 
@@ -145,6 +167,7 @@ def find_phrase_pages(index: dict, phrase: str) -> list[str]:
 
     Phrase search uses the word positions stored in the index.
     """
+    # convert the phrase into the same word format used by the index
     phrase_terms = tokenize(phrase)
 
     if not phrase_terms:
@@ -152,12 +175,15 @@ def find_phrase_pages(index: dict, phrase: str) -> list[str]:
 
     first_term = phrase_terms[0]
 
+    # no page can contain the phrase if the first word is missing
     if first_term not in index:
         return []
 
+    # only pages containing the first word need to be checked
     candidate_pages = set(index[first_term].keys())
     matching_pages = set()
 
+    # check each candidate page using positional matching
     for page in candidate_pages:
         if _page_contains_phrase(index, page, phrase_terms):
             matching_pages.add(page)
@@ -171,6 +197,7 @@ def get_index_entry(index: dict, word: str):
 
     The word is normalised so that search is case-insensitive.
     """
+    # normalise the requested word before checking the index
     words = tokenize(word)
 
     if not words:

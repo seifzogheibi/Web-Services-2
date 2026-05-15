@@ -9,8 +9,13 @@ def get_index_statistics(index: dict, index_path: Path = DEFAULT_INDEX_PATH) -> 
     """
     Calculate useful statistics about the generated index.
     """
+    # count how many unique words are stored in the index
     unique_words = len(index)
+
+    # use a set so each indexed page is only counted once
     pages = set()
+
+    # count all word occurrences across all indexed pages
     total_word_occurrences = 0
 
     for word_entries in index.values():
@@ -18,8 +23,10 @@ def get_index_statistics(index: dict, index_path: Path = DEFAULT_INDEX_PATH) -> 
             pages.add(page)
             total_word_occurrences += stats["frequency"]
 
+    # default to zero if the index file does not exist yet
     index_file_size = 0
 
+    # record the saved index file size when the file is available
     if index_path.exists():
         index_file_size = index_path.stat().st_size
 
@@ -35,20 +42,30 @@ def benchmark_search(index: dict, query_terms: list[str], runs: int = 1000) -> f
     """
     Measure the average search time for a query over several runs.
     """
+    # start the timer before running the repeated searches
     start_time = time.perf_counter()
 
+    # repeat the same query to get a more stable average time
     for _ in range(runs):
         find_pages(index, query_terms)
 
+    # stop the timer after all runs have completed
     end_time = time.perf_counter()
+
+    # divide the total time by the number of runs to get the average
     average_time = (end_time - start_time) / runs
 
     return average_time
 
 
 def main():
+    # load the saved index created by the build command
     index = load_index()
+
+    # calculate summary information about the generated index
     statistics = get_index_statistics(index)
+
+    # benchmark a sample multi-word query
     average_search_time = benchmark_search(index, ["good", "friends"])
 
     print("Index statistics")
