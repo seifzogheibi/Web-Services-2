@@ -45,7 +45,7 @@ source venv/bin/activate
 Install dependencies:
 
 ```bash
-pip install -r requirements.txt
+python3 -m pip install -r requirements.txt
 ```
 
 
@@ -93,7 +93,7 @@ pytest --cov=src tests/
 
 ## Documentation
 
-## Design Decisions
+### Design Decisions
 
 ### Crawler
 
@@ -179,7 +179,7 @@ For a multi-word query, the main cost is set intersection across the pages conta
 The project also includes a small benchmark script:
 
 ```bash
-python src/benchmark.py
+python3 -m src.benchmark
 ```
 
 This reports:
@@ -230,6 +230,8 @@ This makes the tool more advanced than a simple word-to-page lookup while keepin
 
 Generative AI was used as a support tool during development. It helped with planning the project structure, explaining inverted index design, suggesting examples of pytest tests, and identifying edge cases to consider.
 
-However, AI-generated suggestions were not accepted without review. For example, one important design decision was whether multi-word search should use OR logic or AND logic. The coursework example states that `find good friends` should return pages containing the words `good` and `friends`, so the implementation uses set intersection to return pages containing all query terms.
+However, AI-generated suggestions were not accepted without review. For example, the first AI-assisted test suite only reached around 70% coverage, so I improved it by adding mocked crawler tests, CLI output tests, and benchmark tests, bringing total source coverage to 92%.
 
-AI support was useful for breaking the problem into smaller components, but the final implementation still required manual testing, debugging, and understanding of each function. This was important because the coursework requires that all submitted code can be explained and justified.
+Another example was the index design. A basic index storing only frequency would have been enough for simple search, but I chose to also store word positions. This increased storage cost, but enabled exact phrase search using positional postings.
+
+AI support was useful for breaking the problem into smaller components, but the final implementation still required manual testing, debugging, and understanding of each function. The main lesson was that GenAI can speed up development, but it does not replace engineering judgement. I tested the code independently, compared design choices with lecture concepts, and only kept code and features that I could explain and justify.
